@@ -1,0 +1,28 @@
+TrackerContractAddress = 0x3449BB31ad95585Fe455b0713d2286a3FEcf0a50
+Ganache => {
+    deployer = 0x2Cd755E0836C99eDea2E7543B608b0440dF4746F
+Manufacturer1 = 0x0B4f77e363D616619EC62b6c170ec89dA009D3C1, Nike, London
+Manufacturer2 = 0xfD2508300712d411A3A8a0A9ef977A125660862e, Puma, London
+Seller1 = 0xC84c54141C5bbB2beBDBEe60A72c382EdA4Ac946, Tesco, Reading
+Seller2 = 0x91d99C048e487da7060F8362Fa1196236fd2b115, Sainsbury's, Manchester
+Distributor1 = 0x41aC78c7De22908a06173F1046bE05C85477f6d3, Amazon, London
+Distributor2 = 0x334805D9FC31F4325C8376b9C731B386A3fF0455, DPD, London
+}
+
+ProvenanceContracts {
+    Man1 - Distrib2 - Distrib1 - Sel1 => 0x000000000000000000000000b78728350da4bf2cc308ab081eb8eea3a3be34d4
+}
+
+commands => {
+    let con = await TrackerContract.deployed()
+    let accounts = await web3.eth.getAccounts()
+    let r = await con.createProvenanceContract("0xfD2508300712d411A3A8a0A9ef977A125660862e", "nike shoes", {from: accounts[1]})
+    let manuf = await con.addManufacturer("0x0B4f77e363D616619EC62b6c170ec89dA009D3C1", "Amazon", "London")
+    let r1 = await con.getProductDetails("0xb30D16926cd4287d3bC4fb626dce0Ed799aA3F74")
+}
+
+
+on rinkeby => {
+   TrackerContractAddress = 0xcC8A71043CE94A38b5119E3ef1035C47C756DDa2
+   accountForDeployment = 0x101143F5B3b4723e8f3E7C32d95a7d4D8E8BAfb3
+}

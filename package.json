@@ -1,0 +1,29 @@
+{
+  "name": "track_provenance",
+  "version": "1.0.0",
+  "description": "Node.js API implementing web3js library and solidity contracts for Ethereum blockchain deployment",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "server": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Node.js",
+    "Web3js",
+    "Ethereum",
+    "Solidity",
+    "Smart",
+    "Contracts"
+  ],
+  "author": "Madalin Preda",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "nodemon": "^2.0.2",
+    "solc": "^0.5.0",
+    "truffle-hdwallet-provider": "^1.0.17",
+    "web3": "^0.20.7"
+  }
+}
