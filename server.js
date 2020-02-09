@@ -30,6 +30,10 @@ app.use(initAccounts);
 
 // API functions
 
+const hello = async (req, res) => {
+  res.status(200).json({ message: "hello" });
+};
+
 const createUser = async (req, res) => {
   let { userAddress, name, location, role } = req.body;
   if (!accounts.includes(userAddress.toLowerCase()))
@@ -89,7 +93,7 @@ const getAllProducts = async (req, res) => {
   res.status(200).json({ products });
 };
 
-const getAccounts = (req, res) => {
+const getAccounts = async (req, res) => {
   res.status(200).json({ accounts });
 };
 
@@ -162,6 +166,7 @@ const transferProduct = async (req, res) => {
 // api paths
 
 // GET
+app.get("/hello", exceptionHandler(hello));
 app.get("/accounts", exceptionHandler(getAccounts));
 app.get("/product-details", exceptionHandler(getProductDetails));
 app.get("/all-products", exceptionHandler(getAllProducts));
