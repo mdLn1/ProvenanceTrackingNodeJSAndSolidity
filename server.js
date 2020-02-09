@@ -35,17 +35,20 @@ const hello = async (req, res) => {
 };
 
 const createUser = async (req, res) => {
-  let { userAddress, name, location, role } = req.body;
-  if (!accounts.includes(userAddress.toLowerCase()))
+  let { senderAddress, userToCreateAddress, name, location, role } = req.body;
+  if (
+    !accounts.includes(userToCreateAddress.toLowerCase()) ||
+    !accounts.includes(senderAddress.toLowerCase())
+  )
     throw new CustomError("Invalid account address", 400);
   if (role && role.toLowerCase() !== "manufacturer")
     await contractInstance.addUser(userAddress, name, location, role, {
-      from: accounts[0],
+      from: senderAddress,
       gas: 3000000
     });
   else
     await contractInstance.addManufacturer(userAddress, name, location, {
-      from: accounts[0],
+      from: senderAddress,
       gas: 3000000
     });
   res
@@ -54,9 +57,9 @@ const createUser = async (req, res) => {
 };
 
 const createProductContract = async (req, res) => {
-  const { userAddress, sellerAddress, productName } = req.body;
+  const { senderAddress, sellerAddress, productName } = req.body;
   if (
-    !accounts.includes(userAddress.toLowerCase()) ||
+    !accounts.includes(senderAddress.toLowerCase()) ||
     !accounts.includes(sellerAddress.toLowerCase())
   )
     throw new CustomError("Invalid account address", 400);
@@ -73,21 +76,21 @@ const createProductContract = async (req, res) => {
 };
 
 const changeProductDetails = async (req, res) => {
-  const { contract, newProductName, userAddress } = req.body;
-  if (!accounts.includes(userAddress))
+  const { contractAddress, newProductName, senderAddress } = req.body;
+  if (!accounts.includes(senderAddress))
     throw new CustomError("Invalid account address", 400);
-  await contractInstance.changeProductDetails(contract, newProductName, {
-    from: userAddress,
+  await contractInstance.changeProductDetails(contractAddress, newProductName, {
+    from: senderAddress,
     gas: 3000000
   });
 };
 
 const getAllProducts = async (req, res) => {
-  const { userAddress } = req.body;
-  if (!accounts.includes(userAddress))
+  const { senderAddress } = req.body;
+  if (!accounts.includes(senderAddress))
     throw new CustomError("Account does not exist", 400);
   const products = await contractInstance.getAllProducts({
-    from: userAddress,
+    from: senderAddress,
     gas: 3000000
   });
   res.status(200).json({ products });
@@ -98,66 +101,66 @@ const getAccounts = async (req, res) => {
 };
 
 const getProductCurrentOwner = async (req, res) => {
-  const { contract } = req.body;
-  const owner = await contractInstance.getProductCurrentOwner(contract);
+  const { contractAddress } = req.body;
+  const owner = await contractInstance.getProductCurrentOwner(contractAddress);
   res.status(200).json({ owner });
 };
 
 // get the details of a product, name for starters
 const getProductDetails = async (req, res) => {
-  const { address } = req.body;
-  const productName = await contractInstance.getProductName(address);
+  const { contractAddress } = req.body;
+  const productName = await contractInstance.getProductName(contractAddress);
   res.status(200).json({ product: productName });
 };
 
 const getProductState = async (req, res) => {
-  const { contract } = req.body;
-  const state = await contractInstance.getProductState(contract);
+  const { contractAddress } = req.body;
+  const state = await contractInstance.getProductState(contractAddress);
   res.status(200).json({ state });
 };
 
 const returnProduct = async (req, res) => {
-  const { contract, buyer, seller } = req.body;
-  if (!accounts.includes(seller.toLowerCase()))
+  const { contractAddress, buyer, sellerAddress } = req.body;
+  if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Product cannot be returned here", 400);
-  await contractInstance.returnProduct(contract, buyer, {
-    from: seller,
+  await contractInstance.returnProduct(contractAddress, buyer, {
+    from: sellerAddress,
     gas: 3000000
   });
   res.status(200).json({ message: "Product returned" });
 };
 
 const resellProduct = async (req, res) => {
-  const { contract, seller, buyer, newBuyer } = req.body;
-  if (!accounts.includes(seller.toLowerCase()))
+  const { contractAddress, sellerAddress, buyer, newBuyer } = req.body;
+  if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Product cannot be resold here", 400);
-  await contractInstance.resellProduct(contract, buyer, newBuyer, {
-    from: seller,
+  await contractInstance.resellProduct(contractAddress, buyer, newBuyer, {
+    from: sellerAddress,
     gas: 3000000
   });
   res.status(200).json({ message: "Successfully transferred property" });
 };
 
 const sellProduct = async (req, res) => {
-  const { contract, buyer, seller } = req.body;
-  if (!accounts.includes(seller.toLowerCase()))
+  const { contractAddress, buyer, sellerAddress } = req.body;
+  if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Product cannot be sold here", 400);
-  await contractInstance.sellProduct(contract, buyer, {
-    from: seller,
+  await contractInstance.sellProduct(contractAddress, buyer, {
+    from: sellerAddress,
     gas: 3000000
   });
   res.status(200).json({ message: "Successfully finished transaction" });
 };
 
 const transferProduct = async (req, res) => {
-  const { originAddress, destinationAddress, contractAddress } = req.body;
+  const { senderAddress, destinationAddress, contractAddress } = req.body;
   if (
-    !accounts.includes(originAddress.toLowerCase()) ||
+    !accounts.includes(senderAddress.toLowerCase()) ||
     !accounts.includes(destinationAddress.toLowerCase())
   )
     throw new CustomError("Transit party does not exist", 400);
   await contractInstance.transfer(destinationAddress, contractAddress, {
-    from: originAddress,
+    from: senderAddress,
     gas: 3000000
   });
   res.status(200).json({ message: "Successfully transferred product" });
