@@ -7,7 +7,7 @@ const app = express();
 const writeFeedback = require("./utils/writeFeedback");
 const exceptionHandler = require("./utils/exceptionHandler");
 const promisify = require("./utils/promisify");
-
+const { encrypt, decrypt } = require("./utils/encryption");
 //setting up environment
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.LOCAL_NODE));
 const PORT = process.env.PORT || 5000;
@@ -15,8 +15,11 @@ const abi = JSON.parse(
   '[{"inputs": [],"payable": false,"stateMutability": "nonpayable","type": "constructor"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "_newContractAddress","type": "address"},{"indexed": true,"internalType": "address","name": "_contractCreator","type": "address"},{"indexed": false,"internalType": "string","name": "_productName","type": "string"}],"name": "ProvenanceContractDeployed","type": "event"},{"constant": true,"inputs": [{"internalType": "uint256","name": "","type": "uint256"}],"name": "users","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_seller","type": "address"},{"internalType": "string","name": "_productName","type": "string"}],"name": "createProvenanceContract","outputs": [{"internalType": "address","name": "newContract","type": "address"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_location","type": "string"}],"name": "addManufacturer","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_location","type": "string"},{"internalType": "string","name": "_role","type": "string"}],"name": "addUser","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [],"name": "getAllProducts","outputs": [{"internalType": "address[]","name": "","type": "address[]"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_deployedContractAddress","type": "address"}],"name": "getProductState","outputs": [{"internalType": "string","name": "","type": "string"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_deployedContractAddress","type": "address"}],"name": "getProductName","outputs": [{"internalType": "string","name": "","type": "string"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_newParty","type": "address"},{"internalType": "address","name": "_contract","type": "address"}],"name": "transfer","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "returnProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"},{"internalType": "string","name": "_newBuyer","type": "string"}],"name": "resellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "sellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_productName","type": "string"}],"name": "changeProductDetails","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductCurrentOwner","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"}]'
 );
 var con = web3.eth.contract(abi);
-var contractInstance = con.at("0x3449BB31ad95585Fe455b0713d2286a3FEcf0a50");
+var contractInstance = con.at("0x78a4109fB72A29F35b0cc45e8081B86080A6a4F7");
 let accounts;
+
+// existing roles
+const roles = ["manufacturer", "seller", "distributor"];
 
 //middleware functions
 const initAccounts = async (req, res, next) => {
@@ -30,7 +33,7 @@ app.use(initAccounts);
 
 // API functions
 
-const hello = async (req, res) => {
+const hello = (req, res) => {
   res.status(200).json({ message: "hello" });
 };
 
@@ -41,16 +44,13 @@ const createUser = async (req, res) => {
     !accounts.includes(senderAddress.toLowerCase())
   )
     throw new CustomError("Invalid account address", 400);
-  if (role && role.toLowerCase() !== "manufacturer")
-    await contractInstance.addUser(userAddress, name, location, role, {
-      from: senderAddress,
-      gas: 3000000
-    });
-  else
-    await contractInstance.addManufacturer(userAddress, name, location, {
-      from: senderAddress,
-      gas: 3000000
-    });
+  role = role.toLowerCase();
+  if (!roles.includes(role))
+    throw new CustomError("Chosen role does not exist", 400);
+  await contractInstance.addUser(userToCreateAddress, name, location, role, {
+    from: senderAddress,
+    gas: 3000000,
+  });
   res
     .status(201)
     .json({ success: "Successfully added new " + (role ? role : "User") });
@@ -69,7 +69,7 @@ const createProductContract = async (req, res) => {
     await contractInstance.createProvenanceContract(
       sellerAddress,
       productName,
-      { from: userAddress, gas: 3000000 }
+      { from: senderAddress, gas: 3000000 }
     )
   );
   res.status(201).json({ contractAddress: result.logs[0].topics[1] });
@@ -81,7 +81,7 @@ const changeProductDetails = async (req, res) => {
     throw new CustomError("Invalid account address", 400);
   await contractInstance.changeProductDetails(contractAddress, newProductName, {
     from: senderAddress,
-    gas: 3000000
+    gas: 3000000,
   });
 };
 
@@ -91,7 +91,7 @@ const getAllProducts = async (req, res) => {
     throw new CustomError("Account does not exist", 400);
   const products = await contractInstance.getAllProducts({
     from: senderAddress,
-    gas: 3000000
+    gas: 3000000,
   });
   res.status(200).json({ products });
 };
@@ -108,12 +108,16 @@ const getProductCurrentOwner = async (req, res) => {
 
 // get the details of a product, name for starters
 const getProductDetails = async (req, res) => {
+
+  // change this to use events
   const { contractAddress } = req.body;
   const productName = await contractInstance.getProductName(contractAddress);
   res.status(200).json({ product: productName });
 };
 
 const getProductState = async (req, res) => {
+
+  // change this to use events
   const { contractAddress } = req.body;
   const state = await contractInstance.getProductState(contractAddress);
   res.status(200).json({ state });
@@ -125,7 +129,7 @@ const returnProduct = async (req, res) => {
     throw new CustomError("Product cannot be returned here", 400);
   await contractInstance.returnProduct(contractAddress, buyer, {
     from: sellerAddress,
-    gas: 3000000
+    gas: 3000000,
   });
   res.status(200).json({ message: "Product returned" });
 };
@@ -136,7 +140,7 @@ const resellProduct = async (req, res) => {
     throw new CustomError("Product cannot be resold here", 400);
   await contractInstance.resellProduct(contractAddress, buyer, newBuyer, {
     from: sellerAddress,
-    gas: 3000000
+    gas: 3000000,
   });
   res.status(200).json({ message: "Successfully transferred property" });
 };
@@ -147,7 +151,7 @@ const sellProduct = async (req, res) => {
     throw new CustomError("Product cannot be sold here", 400);
   await contractInstance.sellProduct(contractAddress, buyer, {
     from: sellerAddress,
-    gas: 3000000
+    gas: 3000000,
   });
   res.status(200).json({ message: "Successfully finished transaction" });
 };
@@ -161,7 +165,7 @@ const transferProduct = async (req, res) => {
     throw new CustomError("Transit party does not exist", 400);
   await contractInstance.transfer(destinationAddress, contractAddress, {
     from: senderAddress,
-    gas: 3000000
+    gas: 3000000,
   });
   res.status(200).json({ message: "Successfully transferred product" });
 };

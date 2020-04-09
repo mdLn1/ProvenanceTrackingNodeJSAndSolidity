@@ -1,5 +1,6 @@
 pragma solidity >=0.5.0;
 
+
 contract ProvenanceContract {
     //Set of States
     enum StateType {Created, InTransit, InShop, Sold}
@@ -9,9 +10,20 @@ contract ProvenanceContract {
     address private manufacturer;
     address private seller;
     address private currentHolder;
+    string private linkToMerch = "";
     string private buyer = "";
-    string private productId = "";
+    uint256 private productId;
     string private productName = "";
+
+    event TransitPartyContractDeployed(
+        address indexed _contractCreator,
+        uint256 indexed _productId,
+        string _partyName,
+        string _productName,
+        string _latitudeLocation,
+        string _longitudeLocation,
+        string _datedOn
+    );
 
     modifier onlyManufacturer(address sender) {
         require(
@@ -42,16 +54,17 @@ contract ProvenanceContract {
         _;
     }
 
-    struct TransitParty {
-        address partyAddress;
-        string name;
-    }
-
-    TransitParty[] public deliveries;
-
-    constructor(address _sender, address _seller, string memory _productName)
-        public
-    {
+    constructor(
+        address _sender,
+        address _seller,
+        uint256 _productId,
+        string memory _productName,
+        string memory _linkToMerch,
+        string memory _manufacturerName,
+        string memory _latitudeLocation,
+        string memory _longitudeLocation,
+        string memory _dateTransferred
+    ) public {
         require(
             _seller != _sender,
             "Seller must be different from Manufacturer"
@@ -59,40 +72,36 @@ contract ProvenanceContract {
         productName = _productName;
         manufacturer = _sender;
         currentHolder = manufacturer;
+        productId = _productId;
         seller = _seller;
         State = StateType.Created;
+        linkToMerch = _linkToMerch;
+        emit TransitPartyContractDeployed(
+            _sender,
+            _productId,
+            _manufacturerName,
+            _productName,
+            _latitudeLocation,
+            _longitudeLocation,
+            _dateTransferred
+        );
     }
 
-    function editProduct(address _sender, string memory _newName) public onlyMandS(_sender) {
+    function editProduct(address _sender, string memory _newName)
+        public
+        onlyMandS(_sender)
+    {
         productName = _newName;
     }
 
-    function getProductStatus() public view returns (string memory) {
-        string memory message = "Manufacturer ";
-        for (uint256 i = 0; i < deliveries.length; i++) {
-            message = concat(message, deliveries[i].name);
-        }
-        message = concat(message, " Seller");
-        return message;
-    }
-
-    function getCurrentOwner() public view returns(address) {
+    function getCurrentOwner() public view returns (address) {
         return currentHolder;
     }
 
-    function getProductDetails() public view returns (string memory) {
-        return productName;
-    }
-
-    function getManufacturer() public view returns(address) {
-        return manufacturer;
-    }
-
-    function getSeller() public view returns(address) {
-        return seller;
-    }
-
-    function returnProduct(address _sender, string memory _buyer) public onlySeller(_sender) {
+    function returnProduct(address _sender, string memory _buyer)
+        public
+        onlySeller(_sender)
+    {
         require(
             keccak256(bytes(buyer)) == keccak256(bytes(_buyer)),
             "Operation failed, buyer entered invalid name"
@@ -101,10 +110,11 @@ contract ProvenanceContract {
         buyer = "";
     }
 
-    function resellProduct(address _sender, string memory _buyer, string memory _newBuyer)
-        public
-        onlySeller(_sender)
-    {
+    function resellProduct(
+        address _sender,
+        string memory _buyer,
+        string memory _newBuyer
+    ) public onlySeller(_sender) {
         require(
             keccak256(bytes(buyer)) == keccak256(bytes(_buyer)),
             "Operation failed, buyer entered invalid name"
@@ -116,7 +126,10 @@ contract ProvenanceContract {
         buyer = _newBuyer;
     }
 
-    function sellProduct(address _sender, string memory _buyer) public onlySeller(_sender) {
+    function sellProduct(address _sender, string memory _buyer)
+        public
+        onlySeller(_sender)
+    {
         require(
             State == StateType.InShop,
             "Product must be inside the shop to sell it"
@@ -125,10 +138,14 @@ contract ProvenanceContract {
         buyer = _buyer;
     }
 
-    function transferProduct(address _sender, address _newParty, string memory _nameNewParty)
-        public
-        onlyCurrentHolder(_sender)
-    {
+    function transferProduct(
+        address _sender,
+        address _newParty,
+        string memory _nameNewParty,
+        string memory _latitudeNewParty,
+        string memory _longitudeNewParty,
+        string memory _dateTransferred
+    ) public onlyCurrentHolder(_sender) {
         require(
             State != StateType.Sold,
             "Item is sold already, contact seller"
@@ -145,8 +162,16 @@ contract ProvenanceContract {
                 bytes(_nameNewParty).length > 0,
                 "The new party must have a name"
             );
-            deliveries.push(TransitParty(_newParty, _nameNewParty));
             currentHolder = _newParty;
+            emit TransitPartyContractDeployed(
+                _newParty,
+                productId,
+                _nameNewParty,
+                productName,
+                _latitudeNewParty,
+                _longitudeNewParty,
+                _dateTransferred
+            );
         }
     }
 
@@ -172,5 +197,4 @@ contract ProvenanceContract {
         }
         return string(_newValue);
     }
-
 }

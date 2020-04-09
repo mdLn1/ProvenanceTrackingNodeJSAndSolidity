@@ -1,13 +1,15 @@
 pragma solidity >=0.5.0;
 import {ProvenanceContract} from "./ProvenanceContract.sol";
 
+
 contract TrackerContract {
+    enum RoleType {Manufacturer, Seller, Distributor}
     // admin, can be contract deployer
     address admin;
     // registered users
     mapping(address => User) private authorizedUsers;
-    address[] public users;
-
+    mapping(string => address) private usersByName;
+    uint256 private productId = 1;
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only an admin can perform this action");
         _;
@@ -16,91 +18,129 @@ contract TrackerContract {
     event ProvenanceContractDeployed(
         address indexed _newContractAddress,
         address indexed _contractCreator,
-        string _productName
+        uint256 indexed _productId,
+        string _manufacturerName,
+        string _productName,
+        string _linkToMerch,
+        string _dateAdded
+    );
+
+    event AddBranchEvent(
+        address indexed _partyAddress,
+        string _companyName,
+        string _branchName,
+        string _latitudeLocation,
+        string _longitudeLocation
     );
 
     struct User {
-        string name;
-        string location;
-        string role;
+        string companyName;
+        string password;
         bool exists;
-        address[] products;
-        bool isManufacturer;
+        bool disabled;
+        RoleType role;
     }
 
     constructor() public {
         admin = msg.sender;
     }
 
+    function loginUser(string memory _name, string memory _password)
+        public
+        view
+        returns (bool)
+    {
+        if (
+            keccak256(bytes(authorizedUsers[usersByName[_name]].password)) ==
+            keccak256(bytes(_password))
+        ) {
+            return true;
+        }
+        return false;
+    }
+
     function createProvenanceContract(
         address _seller,
-        string memory _productName
+        string memory _productName,
+        string memory _linkToMerch,
+        string memory _latitudeLocation,
+        string memory _longitudeLocation,
+        string memory _dateAdded
     ) public returns (address newContract) {
         require(
-            authorizedUsers[msg.sender].isManufacturer,
+            authorizedUsers[msg.sender].role == RoleType.Manufacturer,
             "You are not authorized to create a contract"
         );
         newContract = address(
-            new ProvenanceContract(msg.sender, _seller, _productName)
+            new ProvenanceContract(
+                msg.sender,
+                _seller,
+                productId,
+                _productName,
+                _linkToMerch,
+                authorizedUsers[msg.sender].companyName,
+                _latitudeLocation,
+                _longitudeLocation,
+                _dateAdded
+            )
         );
-        authorizedUsers[msg.sender].products.push(newContract);
-        emit ProvenanceContractDeployed(newContract, msg.sender, _productName);
-    }
-
-    function addManufacturer(
-        address _accountAddress,
-        string memory _name,
-        string memory _location
-    ) public onlyAdmin {
-        authorizedUsers[_accountAddress] = User(
-            _name,
-            _location,
-            "Manufacturer",
-            true,
-            new address[](0),
-            true
+        emit ProvenanceContractDeployed(
+            newContract,
+            msg.sender,
+            productId,
+            authorizedUsers[msg.sender].companyName,
+            _productName,
+            _linkToMerch,
+            _dateAdded
         );
-        users.push(_accountAddress);
+        productId = productId + 1;
     }
 
     function addUser(
         address _accountAddress,
         string memory _name,
-        string memory _location,
+        string memory _password,
         string memory _role
     ) public onlyAdmin {
+        RoleType assignedRole;
+        if (keccak256(bytes(_role)) == keccak256(bytes("seller"))) {
+            assignedRole = RoleType.Seller;
+        } else if (keccak256(bytes(_role)) == keccak256(bytes("distributor"))) {
+            assignedRole = RoleType.Distributor;
+        } else {
+            assignedRole = RoleType.Manufacturer;
+        }
         authorizedUsers[_accountAddress] = User(
             _name,
-            _location,
-            _role,
+            _password,
             true,
-            new address[](0),
-            false
+            false,
+            assignedRole
         );
-        users.push(_accountAddress);
+        usersByName[_name] = _accountAddress;
     }
 
-    function getAllProducts() public view returns(address[] memory) {
-        return authorizedUsers[msg.sender].products;
+    function addBranch(
+        string memory _branchName,
+        string memory _latitudeLocation,
+        string memory _longitudeLocation
+    ) public {
+        emit AddBranchEvent(
+            msg.sender,
+            authorizedUsers[msg.sender].companyName,
+            _branchName,
+            _latitudeLocation,
+            _longitudeLocation
+        );
     }
 
-    function getProductState(address _deployedContractAddress)
-        public
-        view
-        returns (string memory)
-    {
-        return ProvenanceContract(_deployedContractAddress).getProductStatus();
-    }
-
-    function getProductName(address _deployedContractAddress)
-        public
-        view
-        returns (string memory)
-    {
-        return ProvenanceContract(_deployedContractAddress).getProductDetails();
-    }
-
-    function transfer(address _newParty, address _contract) public {
+    function transferProduct(
+        address _newParty,
+        address _contract,
+        string memory _latitudeLocation,
+        string memory _longitudeLocation,
+        string memory _dateTransferred
+    ) public {
         require(
             authorizedUsers[_newParty].exists,
             "User does not exist, please do not make transfer"
@@ -108,7 +148,10 @@ contract TrackerContract {
         ProvenanceContract(_contract).transferProduct(
             msg.sender,
             _newParty,
-            authorizedUsers[_newParty].name
+            authorizedUsers[_newParty].companyName,
+            _latitudeLocation,
+            _longitudeLocation,
+            _dateTransferred
         );
     }
 
