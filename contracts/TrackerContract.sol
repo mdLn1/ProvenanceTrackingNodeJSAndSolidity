@@ -15,22 +15,40 @@ contract TrackerContract {
         _;
     }
 
-    event ProvenanceContractDeployed(
-        address indexed _newContractAddress,
-        address indexed _contractCreator,
-        uint256 indexed _productId,
-        string _manufacturerName,
-        string _productName,
-        string _linkToMerch,
-        string _dateAdded
+    event TransitEvent(
+        address indexed transferredTo,
+        uint256 indexed productId,
+        string companyName,
+        string productName,
+        string latitudeLocation,
+        string longitudeLocation,
+        string dateTransferred
     );
 
-    event AddBranchEvent(
-        address indexed _partyAddress,
-        string _companyName,
-        string _branchName,
-        string _latitudeLocation,
-        string _longitudeLocation
+    event ProductEvent(
+        address indexed productContractAddress,
+        address indexed manufacturerAddress,
+        uint256 indexed productId,
+        string manufacturerName,
+        string productName,
+        string linkToMerch,
+        string dateAdded
+    );
+
+    event BranchEvent(
+        address indexed companyAddress,
+        string companyName,
+        string branchName,
+        string latitudeLocation,
+        string longitudeLocation,
+        string dateAdded
+    );
+
+    event UserEvent(
+        address indexed userAddress,
+        string companyName,
+        bool companyDisabled,
+        string dateAdded
     );
 
     struct User {
@@ -48,15 +66,17 @@ contract TrackerContract {
     function loginUser(string memory _name, string memory _password)
         public
         view
-        returns (bool)
+        returns (address companyAddress, bool disabled, RoleType role)
     {
-        if (
-            keccak256(bytes(authorizedUsers[usersByName[_name]].password)) ==
-            keccak256(bytes(_password))
-        ) {
-            return true;
-        }
-        return false;
+        User memory userToLogin = authorizedUsers[usersByName[_name]];
+        require(
+            keccak256(bytes(userToLogin.password)) ==
+                keccak256(bytes(_password)),
+            "Invalid login attempt"
+        );
+        companyAddress = usersByName[_name];
+        disabled = userToLogin.disabled;
+        role = userToLogin.role;
     }
 
     function createProvenanceContract(
@@ -66,33 +86,40 @@ contract TrackerContract {
         string memory _latitudeLocation,
         string memory _longitudeLocation,
         string memory _dateAdded
-    ) public returns (address newContract) {
+    ) public returns (uint256 newProductId, string memory company) {
         require(
             authorizedUsers[msg.sender].role == RoleType.Manufacturer,
             "You are not authorized to create a contract"
         );
-        newContract = address(
+        company = authorizedUsers[msg.sender].companyName;
+        address newContract = address(
             new ProvenanceContract(
                 msg.sender,
                 _seller,
                 productId,
                 _productName,
-                _linkToMerch,
-                authorizedUsers[msg.sender].companyName,
-                _latitudeLocation,
-                _longitudeLocation,
-                _dateAdded
+                _linkToMerch
             )
         );
-        emit ProvenanceContractDeployed(
+        emit ProductEvent(
             newContract,
             msg.sender,
             productId,
-            authorizedUsers[msg.sender].companyName,
+            company,
             _productName,
             _linkToMerch,
             _dateAdded
         );
+        emit TransitEvent(
+            msg.sender,
+            productId,
+            company,
+            _productName,
+            _latitudeLocation,
+            _longitudeLocation,
+            _dateAdded
+        );
+        newProductId = productId;
         productId = productId + 1;
     }
 
@@ -100,7 +127,8 @@ contract TrackerContract {
         address _accountAddress,
         string memory _name,
         string memory _password,
-        string memory _role
+        string memory _role,
+        string memory _dateAdded
     ) public onlyAdmin {
         RoleType assignedRole;
         if (keccak256(bytes(_role)) == keccak256(bytes("seller"))) {
@@ -118,25 +146,30 @@ contract TrackerContract {
             assignedRole
         );
         usersByName[_name] = _accountAddress;
+        emit UserEvent(_accountAddress, _name, false, _dateAdded);
     }
 
     function addBranch(
         string memory _branchName,
         string memory _latitudeLocation,
-        string memory _longitudeLocation
+        string memory _longitudeLocation,
+        string memory _dateAdded
     ) public {
-        emit AddBranchEvent(
+        emit BranchEvent(
             msg.sender,
             authorizedUsers[msg.sender].companyName,
             _branchName,
             _latitudeLocation,
-            _longitudeLocation
+            _longitudeLocation,
+            _dateAdded
         );
     }
 
     function transferProduct(
         address _newParty,
         address _contract,
+        uint256 _productId,
+        string memory productName,
         string memory _latitudeLocation,
         string memory _longitudeLocation,
         string memory _dateTransferred
@@ -145,14 +178,22 @@ contract TrackerContract {
             authorizedUsers[_newParty].exists,
             "User does not exist, please do not make transfer"
         );
-        ProvenanceContract(_contract).transferProduct(
+        string memory company = authorizedUsers[_newParty].companyName;
+        uint256 result = ProvenanceContract(_contract).transferProduct(
             msg.sender,
             _newParty,
-            authorizedUsers[_newParty].companyName,
-            _latitudeLocation,
-            _longitudeLocation,
-            _dateTransferred
+            company
         );
+        if (result != 0)
+            emit TransitEvent(
+                _newParty,
+                _productId,
+                company,
+                productName,
+                _latitudeLocation,
+                _longitudeLocation,
+                _dateTransferred
+            );
     }
 
     function returnProduct(address _contract, string memory _buyer) public {

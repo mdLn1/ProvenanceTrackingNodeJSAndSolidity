@@ -12,10 +12,12 @@ const { encrypt, decrypt } = require("./utils/encryption");
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.LOCAL_NODE));
 const PORT = process.env.PORT || 5000;
 const abi = JSON.parse(
-  '[{"inputs": [],"payable": false,"stateMutability": "nonpayable","type": "constructor"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "_newContractAddress","type": "address"},{"indexed": true,"internalType": "address","name": "_contractCreator","type": "address"},{"indexed": false,"internalType": "string","name": "_productName","type": "string"}],"name": "ProvenanceContractDeployed","type": "event"},{"constant": true,"inputs": [{"internalType": "uint256","name": "","type": "uint256"}],"name": "users","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_seller","type": "address"},{"internalType": "string","name": "_productName","type": "string"}],"name": "createProvenanceContract","outputs": [{"internalType": "address","name": "newContract","type": "address"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_location","type": "string"}],"name": "addManufacturer","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_location","type": "string"},{"internalType": "string","name": "_role","type": "string"}],"name": "addUser","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [],"name": "getAllProducts","outputs": [{"internalType": "address[]","name": "","type": "address[]"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_deployedContractAddress","type": "address"}],"name": "getProductState","outputs": [{"internalType": "string","name": "","type": "string"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_deployedContractAddress","type": "address"}],"name": "getProductName","outputs": [{"internalType": "string","name": "","type": "string"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_newParty","type": "address"},{"internalType": "address","name": "_contract","type": "address"}],"name": "transfer","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "returnProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"},{"internalType": "string","name": "_newBuyer","type": "string"}],"name": "resellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "sellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_productName","type": "string"}],"name": "changeProductDetails","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductCurrentOwner","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"}]'
+  '[{"inputs": [],"payable": false,"stateMutability": "nonpayable","type": "constructor"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "_partyAddress","type": "address"},{"indexed": false,"internalType": "string","name": "_companyName","type": "string"},{"indexed": false,"internalType": "string","name": "_branchName","type": "string"},{"indexed": false,"internalType": "string","name": "_latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "_longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "_dateAdded","type": "string"}],"name": "BranchEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "_newContractAddress","type": "address"},{"indexed": true,"internalType": "address","name": "_contractCreator","type": "address"},{"indexed": true,"internalType": "uint256","name": "_productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "_manufacturerName","type": "string"},{"indexed": false,"internalType": "string","name": "_productName","type": "string"},{"indexed": false,"internalType": "string","name": "_linkToMerch","type": "string"},{"indexed": false,"internalType": "string","name": "_dateAdded","type": "string"}],"name": "ProductEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "_contractCreator","type": "address"},{"indexed": true,"internalType": "uint256","name": "_productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "_partyName","type": "string"},{"indexed": false,"internalType": "string","name": "_productName","type": "string"},{"indexed": false,"internalType": "string","name": "_latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "_longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "_datedOn","type": "string"}],"name": "TransitEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "_userAddress","type": "address"},{"indexed": false,"internalType": "string","name": "_username","type": "string"},{"indexed": false,"internalType": "bool","name": "_userDisabled","type": "bool"},{"indexed": false,"internalType": "string","name": "_dateAdded","type": "string"}],"name": "UserEvent","type": "event"},{"constant": true,"inputs": [{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_password","type": "string"}],"name": "loginUser","outputs": [{"internalType": "address","name": "companyAddress","type": "address"},{"internalType": "bool","name": "disabled","type": "bool"},{"internalType": "enum TrackerContract.RoleType","name": "role","type": "uint8"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_seller","type": "address"},{"internalType": "string","name": "_productName","type": "string"},{"internalType": "string","name": "_linkToMerch","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "createProvenanceContract","outputs": [{"internalType": "uint256","name": "newProductId","type": "uint256"},{"internalType": "string","name": "company","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_password","type": "string"},{"internalType": "string","name": "_role","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addUser","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "string","name": "_branchName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addBranch","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_newParty","type": "address"},{"internalType": "address","name": "_contract","type": "address"},{"internalType": "uint256","name": "_productId","type": "uint256"},{"internalType": "string","name": "productName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateTransferred","type": "string"}],"name": "transferProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "returnProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"},{"internalType": "string","name": "_newBuyer","type": "string"}],"name": "resellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "sellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_productName","type": "string"}],"name": "changeProductDetails","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductCurrentOwner","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"}]'
 );
-var con = web3.eth.contract(abi);
-var contractInstance = con.at("0x78a4109fB72A29F35b0cc45e8081B86080A6a4F7");
+var contractInstance = new web3.eth.Contract(
+  abi,
+  "0xe29379c8ca80205183f495eC30ED20faAA7BA36e"
+);
 let accounts;
 
 // existing roles
@@ -24,6 +26,7 @@ const roles = ["manufacturer", "seller", "distributor"];
 //middleware functions
 const initAccounts = async (req, res, next) => {
   if (!accounts) accounts = await promisify(web3.eth.getAccounts);
+  accounts = accounts.map((el) => el.toLowerCase());
   next();
 };
 
@@ -37,8 +40,19 @@ const hello = (req, res) => {
   res.status(200).json({ message: "hello" });
 };
 
+const test = async (req, res) => {
+  const contract = await contractInstance.getPastEvents("ProductEvent", {
+    filter: { _newContractAddress: ["0x98d9d66d5d2602df469051ed57c3aaf940d6126f"] },
+    fromBlock: 0,
+    toBlock: "latest",
+  });
+  return res.status(200).json(contract);
+};
+
+app.use("/test", exceptionHandler(test));
+
 const createUser = async (req, res) => {
-  let { senderAddress, userToCreateAddress, name, location, role } = req.body;
+  let { senderAddress, userToCreateAddress, name, password, role } = req.body;
   if (
     !accounts.includes(userToCreateAddress.toLowerCase()) ||
     !accounts.includes(senderAddress.toLowerCase())
@@ -47,37 +61,61 @@ const createUser = async (req, res) => {
   role = role.toLowerCase();
   if (!roles.includes(role))
     throw new CustomError("Chosen role does not exist", 400);
-  await contractInstance.addUser(userToCreateAddress, name, location, role, {
-    from: senderAddress,
-    gas: 3000000,
+  let users = await contractInstance.getPastEvents("UserEvent", {
+    filter: { _userAddress: [userToCreateAddress] },
+    fromBlock: 0,
+    toBlock: "latest",
   });
+  if (users.length > 0) {
+    throw new CustomError("User already exists", 400);
+  }
+  const currentDate = new Date().toISOString();
+  await contractInstance.methods
+    .addUser(userToCreateAddress, name, password, role, currentDate)
+    .send({
+      from: senderAddress,
+      gas: 3000000,
+    });
   res
     .status(201)
     .json({ success: "Successfully added new " + (role ? role : "User") });
 };
 
 const createProductContract = async (req, res) => {
-  const { senderAddress, sellerAddress, productName } = req.body;
+  const {
+    senderAddress,
+    sellerAddress,
+    productName,
+    linkToMerch,
+    latitude,
+    longitude,
+  } = req.body;
   if (
     !accounts.includes(senderAddress.toLowerCase()) ||
     !accounts.includes(sellerAddress.toLowerCase())
   )
     throw new CustomError("Invalid account address", 400);
+  const currentDate = new Date().toISOString();
 
-  const result = await promisify(
-    web3.eth.getTransactionReceipt,
-    await contractInstance.createProvenanceContract(
+  const newProduct = await contractInstance.methods
+    .createProvenanceContract(
       sellerAddress,
       productName,
-      { from: senderAddress, gas: 3000000 }
+      linkToMerch,
+      latitude.toString(),
+      longitude.toString(),
+      currentDate
     )
-  );
-  res.status(201).json({ contractAddress: result.logs[0].topics[1] });
+    .send({
+      from: senderAddress,
+      gas: 3000000,
+    });
+  res.status(201).json({ newProduct });
 };
 
 const changeProductDetails = async (req, res) => {
   const { contractAddress, newProductName, senderAddress } = req.body;
-  if (!accounts.includes(senderAddress))
+  if (!accounts.includes(senderAddress.toLowerCase()))
     throw new CustomError("Invalid account address", 400);
   await contractInstance.changeProductDetails(contractAddress, newProductName, {
     from: senderAddress,
@@ -87,7 +125,7 @@ const changeProductDetails = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
   const { senderAddress } = req.body;
-  if (!accounts.includes(senderAddress))
+  if (!accounts.includes(senderAddress.toLowerCase()))
     throw new CustomError("Account does not exist", 400);
   const products = await contractInstance.getAllProducts({
     from: senderAddress,
@@ -102,13 +140,14 @@ const getAccounts = async (req, res) => {
 
 const getProductCurrentOwner = async (req, res) => {
   const { contractAddress } = req.body;
-  const owner = await contractInstance.getProductCurrentOwner(contractAddress);
+  const owner = await contractInstance.getProductCurrentOwner(
+    contractAddress.toLowerCase()
+  );
   res.status(200).json({ owner });
 };
 
 // get the details of a product, name for starters
 const getProductDetails = async (req, res) => {
-
   // change this to use events
   const { contractAddress } = req.body;
   const productName = await contractInstance.getProductName(contractAddress);
@@ -116,11 +155,21 @@ const getProductDetails = async (req, res) => {
 };
 
 const getProductState = async (req, res) => {
-
   // change this to use events
   const { contractAddress } = req.body;
   const state = await contractInstance.getProductState(contractAddress);
   res.status(200).json({ state });
+};
+
+const getCompanyBranches = async (req, res) => {
+  const { companyAddress } = req.body;
+  const branches = await contractInstance.getPastEvents("BranchEvent", {
+    filter: { _userAddress: [companyAddress] },
+    fromBlock: 0,
+    toBlock: "latest",
+  });
+  // const user = await contractInstance.methods.loginUser("Tesco", "password").call();
+  return res.status(200).json(branches);
 };
 
 const returnProduct = async (req, res) => {
@@ -157,17 +206,43 @@ const sellProduct = async (req, res) => {
 };
 
 const transferProduct = async (req, res) => {
-  const { senderAddress, destinationAddress, contractAddress } = req.body;
+  const {
+    senderAddress,
+    destinationAddress,
+    contractAddress,
+    latitude,
+    longitude,
+  } = req.body;
   if (
     !accounts.includes(senderAddress.toLowerCase()) ||
     !accounts.includes(destinationAddress.toLowerCase())
   )
     throw new CustomError("Transit party does not exist", 400);
-  await contractInstance.transfer(destinationAddress, contractAddress, {
-    from: senderAddress,
-    gas: 3000000,
+  const contract = await contractInstance.getPastEvents("ProductEvent", {
+    filter: { _newContractAddress: [contractAddress] },
+    fromBlock: 0,
+    toBlock: "latest",
   });
-  res.status(200).json({ message: "Successfully transferred product" });
+  if (contract.length < 1) throw new CustomError("Product does not exist", 400);
+  const {_productId, _productName} = contract[0].returnValues;
+  const currentDate = new Date().toISOString();
+  const response = await contractInstance.methods
+    .transferProduct(
+      destinationAddress,
+      contractAddress,
+      parseInt(_productId),
+      _productName,
+      latitude.toString(),
+      longitude.toString(),
+      currentDate
+    )
+    .send({
+      from: senderAddress,
+      gas: 3000000,
+    });
+  res
+    .status(200)
+    .json({ message: "Successfully transferred product", response });
 };
 
 // api paths
@@ -179,7 +254,7 @@ app.get("/product-details", exceptionHandler(getProductDetails));
 app.get("/all-products", exceptionHandler(getAllProducts));
 app.get("/product-state", exceptionHandler(getProductState));
 app.get("/contract-owner", exceptionHandler(getProductCurrentOwner));
-
+app.get("/branches", exceptionHandler(getCompanyBranches));
 // POST
 app.post("/add-user", exceptionHandler(createUser));
 app.post("/add-contract", exceptionHandler(createProductContract));
@@ -196,7 +271,7 @@ app.use((req, res, next) => {
 
 // Global error handling through middleware
 app.use((err, req, res, next) => {
-  console.log(err);
+  console.log(err.stack);
   if (err.statusCode) {
     return res.status(err.statusCode).json(writeFeedback(err.message));
   }

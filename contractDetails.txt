@@ -14,7 +14,7 @@ Distributor2 = 0x334805D9FC31F4325C8376b9C731B386A3fF0455, DPD, London
 }
 
 Ganache Win 10 => {
-    TrackerContractAddress = 0x3449BB31ad95585Fe455b0713d2286a3FEcf0a50
+    TrackerContractAddress = 0xe29379c8ca80205183f495eC30ED20faAA7BA36e
 deployer = 0x0e92cb2a4B41990e290Ac79a883587B40eBbF0dC
 Manufacturer1 = 0x95bEc0f0067DBdd06Ad791440B77f80F7943D66d, Nike
 Manufacturer2 = 0x85431A1a000E02C4546Dab4364b15b5e20A7008b, Adidas
@@ -24,15 +24,20 @@ Distributor1 = 0xB3DC0e9F140C06e4188F0c3096B3Df54AA7f6f5D, Amazon
 Distributor2 = 0x4Da0ec157f15D7072C17962A6E2371A014E6f557, DPD
 }
 
-
+Seller1 {
+    branch: "Madalin's Home", "51.49233", "-0.02048"
+}
+Seller2 {
+    branch: "Madalin's Home", "51.49233", "-0.02048"
+}
 
 commands => {
     let con = await TrackerContract.deployed()
     let accounts = await web3.eth.getAccounts()
     let r = await con.createProvenanceContract("0xfD2508300712d411A3A8a0A9ef977A125660862e", "nike shoes", {from: accounts[1]})
     let user = await con.addUser("accountAddress", "name", "password", "role")
-    let r1 = await con.getProductDetails("0xb30D16926cd4287d3bC4fb626dce0Ed799aA3F74")
     const newBranch = await con.addBranch("branchName", "latitude", "longitude", {from: ""})
+    let {addUsers, addBranches} = require("./commands.js")
 }
 
 

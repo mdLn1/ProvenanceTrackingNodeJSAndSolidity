@@ -15,15 +15,6 @@ contract ProvenanceContract {
     uint256 private productId;
     string private productName = "";
 
-    event TransitPartyContractDeployed(
-        address indexed _contractCreator,
-        uint256 indexed _productId,
-        string _partyName,
-        string _productName,
-        string _latitudeLocation,
-        string _longitudeLocation,
-        string _datedOn
-    );
 
     modifier onlyManufacturer(address sender) {
         require(
@@ -59,11 +50,7 @@ contract ProvenanceContract {
         address _seller,
         uint256 _productId,
         string memory _productName,
-        string memory _linkToMerch,
-        string memory _manufacturerName,
-        string memory _latitudeLocation,
-        string memory _longitudeLocation,
-        string memory _dateTransferred
+        string memory _linkToMerch
     ) public {
         require(
             _seller != _sender,
@@ -76,15 +63,6 @@ contract ProvenanceContract {
         seller = _seller;
         State = StateType.Created;
         linkToMerch = _linkToMerch;
-        emit TransitPartyContractDeployed(
-            _sender,
-            _productId,
-            _manufacturerName,
-            _productName,
-            _latitudeLocation,
-            _longitudeLocation,
-            _dateTransferred
-        );
     }
 
     function editProduct(address _sender, string memory _newName)
@@ -137,15 +115,14 @@ contract ProvenanceContract {
         require(bytes(_buyer).length > 0, "The customer must enter their name");
         buyer = _buyer;
     }
-
+// 0 - code finished execution, someone else than seller tried transferring product?
+// 1 - item transferred
+// 2 - item reached the seller
     function transferProduct(
         address _sender,
         address _newParty,
-        string memory _nameNewParty,
-        string memory _latitudeNewParty,
-        string memory _longitudeNewParty,
-        string memory _dateTransferred
-    ) public onlyCurrentHolder(_sender) {
+        string memory _nameNewParty
+    ) public onlyCurrentHolder(_sender) returns(uint) {
         require(
             State != StateType.Sold,
             "Item is sold already, contact seller"
@@ -163,16 +140,13 @@ contract ProvenanceContract {
                 "The new party must have a name"
             );
             currentHolder = _newParty;
-            emit TransitPartyContractDeployed(
-                _newParty,
-                productId,
-                _nameNewParty,
-                productName,
-                _latitudeNewParty,
-                _longitudeNewParty,
-                _dateTransferred
-            );
         }
+        if(State == StateType.InTransit) {
+            return 1;
+        } else if (State == StateType.InShop) {
+            return 2;
+        }
+        return 0;
     }
 
     // Utility
