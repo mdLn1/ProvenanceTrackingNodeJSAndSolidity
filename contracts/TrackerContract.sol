@@ -14,7 +14,7 @@ contract TrackerContract {
         require(msg.sender == admin, "Only an admin can perform this action");
         _;
     }
-
+    // add also state?
     event TransitEvent(
         address indexed transferredTo,
         uint256 indexed productId,
