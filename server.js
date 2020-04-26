@@ -8,6 +8,9 @@ const writeFeedback = require("./utils/writeFeedback");
 const exceptionHandler = require("./utils/exceptionHandler");
 const promisify = require("./utils/promisify");
 const { encrypt, decrypt } = require("./utils/encryption");
+const authMiddleware = require("./middleware/authMiddleware");
+const jwt = require("jsonwebtoken");
+const config = require("config");
 //setting up environment
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.LOCAL_NODE));
 const PORT = process.env.PORT || 5000;
@@ -16,7 +19,7 @@ const abi = JSON.parse(
 );
 var contractInstance = new web3.eth.Contract(
   abi,
-  "0x66aB52a6b4B837AB86F10b2C7EDdD5A1dC567317"
+  "0x47AEd9D7b9A2CBFD0494d5e3767301Ed1E35B96A"
 );
 let accounts;
 
@@ -43,7 +46,7 @@ const hello = (req, res) => {
 const test = async (req, res) => {
   const contract = await contractInstance.getPastEvents("ProductEvent", {
     filter: {
-      _newContractAddress: ["0x98d9d66d5d2602df469051ed57c3aaf940d6126f"],
+      _newContractAddress: ["0x47AEd9D7b9A2CBFD0494d5e3767301Ed1E35B96A"],
     },
     fromBlock: 0,
     toBlock: "latest",
@@ -84,19 +87,27 @@ const createUser = async (req, res) => {
 };
 
 const createProductContract = async (req, res) => {
-  const {
-    senderAddress,
+  let {
     sellerAddress,
+    sellerName,
     productName,
     linkToMerch,
     latitude,
     longitude,
   } = req.body;
-  if (
-    !accounts.includes(senderAddress.toLowerCase()) ||
-    !accounts.includes(sellerAddress.toLowerCase())
-  )
-    throw new CustomError("Invalid account address", 400);
+  const {companyAddress: senderAddress} = req.user;
+  if (!accounts.includes(senderAddress.toLowerCase()))
+    throw new CustomError("Invalid sender account address", 400);
+  if (sellerName) {
+    let users = await contractInstance.getPastEvents("UserEvent", {
+      fromBlock: 0,
+      toBlock: "latest",
+    });
+    let foundUser = users.find((el) => el.returnValues.companyName === sellerName);
+    if (foundUser) sellerAddress = foundUser.returnValues.userAddress;
+  }
+  if (!accounts.includes(sellerAddress.toLowerCase()))
+    throw new CustomError("Invalid seller account address", 400);
   const currentDate = new Date().toISOString();
 
   const newProduct = await contractInstance.methods
@@ -112,7 +123,7 @@ const createProductContract = async (req, res) => {
       from: senderAddress,
       gas: 3000000,
     });
-  res.status(201).json({ product: newProduct.events.ProductEvent });
+  res.status(201).json({ ...newProduct.events.ProductEvent.returnValues });
 };
 
 // you need to check this one, add more options
@@ -135,7 +146,9 @@ const getAllProducts = async (req, res) => {
     fromBlock: 0,
     toBlock: "latest",
   });
-  res.status(200).json(products.map((el) => ({ ...el.returnValues })));
+  res
+    .status(200)
+    .json({ products: products.map((el) => ({ ...el.returnValues })) });
 };
 
 const getAccounts = async (req, res) => {
@@ -191,7 +204,33 @@ const getCompanyBranches = async (req, res) => {
     toBlock: "latest",
   });
   // const user = await contractInstance.methods.loginUser("Tesco", "password").call();
-  return res.status(200).json(branches);
+  return res.status(200).json({ branches });
+};
+
+const login = async (req, res) => {
+  const { username, password } = req.body;
+  const resp = await contractInstance.methods
+    .loginUser(username, password)
+    .call({
+      from: accounts[0],
+      gas: 3000000,
+    });
+  const user = {
+    companyAddress: resp.companyAddress,
+    disabled: resp.disabled,
+    role: parseInt(resp.role),
+    companyName: username,
+  };
+  const payload = {
+    user,
+  };
+  const token = jwt.sign(payload, config.get("jwtSecret"), {
+    expiresIn: 60000,
+  });
+  res.status(200).json({
+    token,
+    user,
+  });
 };
 
 const returnProduct = async (req, res) => {
@@ -270,21 +309,34 @@ const transferProduct = async (req, res) => {
 // api paths
 
 // GET
-app.get("/hello", exceptionHandler(hello));
-app.get("/accounts", exceptionHandler(getAccounts));
+app.get("/hello", hello);
+app.get("/accounts", authMiddleware, exceptionHandler(getAccounts));
 app.get("/product-details", exceptionHandler(getProductDetails));
-app.get("/all-products", exceptionHandler(getAllProducts));
+app.get("/all-products", authMiddleware, exceptionHandler(getAllProducts));
 app.get("/product-state", exceptionHandler(getProductState));
-app.get("/contract-owner", exceptionHandler(getProductCurrentOwner));
-app.get("/branches", exceptionHandler(getCompanyBranches));
+app.get("/product-owner", exceptionHandler(getProductCurrentOwner));
+app.get("/branches", authMiddleware, exceptionHandler(getCompanyBranches));
 // POST
-app.post("/add-user", exceptionHandler(createUser));
-app.post("/add-contract", exceptionHandler(createProductContract));
-app.post("/transfer-product", exceptionHandler(transferProduct));
-app.post("/return-product", exceptionHandler(returnProduct));
-app.post("/resell-product", exceptionHandler(resellProduct));
-app.post("/sell-product", exceptionHandler(sellProduct));
-app.post("/edit-product", exceptionHandler(changeProductDetails));
+app.post("/add-user", authMiddleware, exceptionHandler(createUser));
+app.post("/login", exceptionHandler(login));
+app.post(
+  "/add-contract",
+  authMiddleware,
+  exceptionHandler(createProductContract)
+);
+app.post(
+  "/transfer-product",
+  authMiddleware,
+  exceptionHandler(transferProduct)
+);
+app.post("/return-product", authMiddleware, exceptionHandler(returnProduct));
+app.post("/resell-product", authMiddleware, exceptionHandler(resellProduct));
+app.post("/sell-product", authMiddleware, exceptionHandler(sellProduct));
+app.post(
+  "/edit-product",
+  authMiddleware,
+  exceptionHandler(changeProductDetails)
+);
 
 // Handling pages not found
 app.use((req, res, next) => {

@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const algorithm = "aes-256-ctr";
+const algorithm = "aes-256-cbc";
 const secretPassword = "randomGibberishGastronomy22";
 
 // source https://nodejsera.com/encryption-and-decryption-using-nodejs.html
