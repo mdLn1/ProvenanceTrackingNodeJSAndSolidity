@@ -19,7 +19,7 @@ const abi = JSON.parse(
 );
 var contractInstance = new web3.eth.Contract(
   abi,
-  "0x47AEd9D7b9A2CBFD0494d5e3767301Ed1E35B96A"
+  "0x34651197d094905fBD7EF207063ACA4FA9cb69Db"
 );
 let accounts;
 
@@ -35,18 +35,20 @@ const initAccounts = async (req, res, next) => {
 
 // initialize accounts
 app.use(express.json({ extended: false }));
+app.use(express.urlencoded({ extended: false }));
 app.use(initAccounts);
 
 // API functions
 
 const hello = (req, res) => {
-  res.status(200).json({ message: "hello" });
+  throw new CustomError("error hello");
+  res.status(400).json({ message: "hello" });
 };
 
 const test = async (req, res) => {
   const contract = await contractInstance.getPastEvents("ProductEvent", {
     filter: {
-      _newContractAddress: ["0x47AEd9D7b9A2CBFD0494d5e3767301Ed1E35B96A"],
+      _newContractAddress: ["0x34651197d094905fBD7EF207063ACA4FA9cb69Db"],
     },
     fromBlock: 0,
     toBlock: "latest",
@@ -95,7 +97,18 @@ const createProductContract = async (req, res) => {
     latitude,
     longitude,
   } = req.body;
-  const {companyAddress: senderAddress} = req.user;
+  const { companyAddress: senderAddress } = req.user;
+  if (
+    isNaN(latitude) ||
+    isNaN(longitude) ||
+    parseFloat(latitude) < -90 ||
+    parseFloat(latitude) > 90 ||
+    parseFloat(longitude) < -180 ||
+    parseFloat(longitude) > 180
+  ) {
+    throw new CustomError("Invalid location details", 400);
+  }
+  if (!linkToMerch) linkToMerch = "Not available";
   if (!accounts.includes(senderAddress.toLowerCase()))
     throw new CustomError("Invalid sender account address", 400);
   if (sellerName) {
@@ -103,14 +116,18 @@ const createProductContract = async (req, res) => {
       fromBlock: 0,
       toBlock: "latest",
     });
-    let foundUser = users.find((el) => el.returnValues.companyName === sellerName);
+    let foundUser = users.find(
+      (el) => el.returnValues.companyName === sellerName
+    );
     if (foundUser) sellerAddress = foundUser.returnValues.userAddress;
   }
   if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Invalid seller account address", 400);
   const currentDate = new Date().toISOString();
 
-  const newProduct = await contractInstance.methods
+  const {
+    events: { ProductEvent },
+  } = await contractInstance.methods
     .createProvenanceContract(
       sellerAddress,
       productName,
@@ -123,7 +140,11 @@ const createProductContract = async (req, res) => {
       from: senderAddress,
       gas: 3000000,
     });
-  res.status(201).json({ ...newProduct.events.ProductEvent.returnValues });
+  res.status(201).json({
+    ...ProductEvent.returnValues,
+    productQR: encrypt(ProductEvent.returnValues.productContractAddress),
+    productNFC: encrypt(ProductEvent.returnValues.productId),
+  });
 };
 
 // you need to check this one, add more options
@@ -138,14 +159,19 @@ const changeProductDetails = async (req, res) => {
 };
 
 const getAllProducts = async (req, res) => {
-  const { senderAddress } = req.body;
-  if (!accounts.includes(senderAddress.toLowerCase()))
+  const { companyAddress, role } = req.user;
+  if (!accounts.includes(companyAddress.toLowerCase()))
     throw new CustomError("Account does not exist", 400);
-  let products = await contractInstance.getPastEvents("ProductEvent", {
-    filter: { manufacturerAddress: [senderAddress] },
-    fromBlock: 0,
-    toBlock: "latest",
-  });
+  let products = [];
+  if (role == 1 || role == 2) {
+    products = [];
+  } else {
+    products = await contractInstance.getPastEvents("ProductEvent", {
+      filter: { manufacturerAddress: [companyAddress] },
+      fromBlock: 0,
+      toBlock: "latest",
+    });
+  }
   res
     .status(200)
     .json({ products: products.map((el) => ({ ...el.returnValues })) });
@@ -162,38 +188,54 @@ const getProductCurrentOwner = async (req, res) => {
     fromBlock: 0,
     toBlock: "latest",
   });
-  transits = transits
-    .map((el) => ({ logIndex: el.logIndex, ...el.returnValues }))
-    .sort((a, b) => a.logIndex - b.logIndex);
-  const user = transits[0].transferredTo.toLowerCase();
-  let users = await contractInstance.getPastEvents("UserEvent", {
-    filter: { userAddress: [user] },
-    fromBlock: 0,
-    toBlock: "latest",
-  });
-  if (users.length == 0) throw new CustomError("No owner found", 400);
-  res.status(200).json({ owner: users[0].returnValues.companyName });
+  if (transits.length == 0) {
+    throw new CustomError("Product does not exist in our records", 400);
+  }
+  // transits = transits
+  //   .map((el) => ({
+  //     ...el.returnValues,
+  //     dateEdited: new Date(el.returnValues.dateTransferred),
+  //   }))
+  //   .sort((a, b) => b.dateEdited - a.dateEdited)
+  //   .map((el) => {
+  //     delete el.dateEdited;
+  //     return el;
+  //   });
+  transits = transits.reverse();
+  res.status(200).json({ owner: transits[0].companyName });
 };
 
 const getProductDetails = async (req, res) => {
-  const { productAddress, productId } = req.body;
-  const products = await contractInstance.getPastEvents("ProductEvent", {
-    filter: { productId: [productId] },
+  let { product: productAddress } = req.query;
+  productAddress = decrypt(productAddress);
+  let products = await contractInstance.getPastEvents("ProductEvent", {
+    filter: { productContractAddress: [productAddress] },
     fromBlock: 0,
     toBlock: "latest",
   });
-  if (products.length == 0) {
-    throw new CustomError("No product found matching the criteria", 400);
+  if (products.length < 1) throw new CustomError("Product not found", 400);
+  let transits = await contractInstance.getPastEvents("TransitEvent", {
+    filter: { productId: [parseInt(products[0].returnValues.productId)] },
+    fromBlock: 0,
+    toBlock: "latest",
+  });
+  if (transits.length == 0) {
+    throw new CustomError("Product does not exist in our records", 400);
   }
-  res.status(200).json({ product: productName });
-};
-
-// edit contract for this
-const getProductState = async (req, res) => {
-  // change this to use events
-  const { contractAddress } = req.body;
-  const state = await contractInstance.getProductState(contractAddress);
-  res.status(200).json({ state });
+  // transits = transits
+  //   .map((el) => ({
+  //     ...el.returnValues,
+  //     dateEdited: new Date(el.returnValues.dateTransferred),
+  //   }))
+  //   .sort((a, b) => b.dateEdited - a.dateEdited)
+  //   .map((el) => {
+  //     delete el.dateEdited;
+  //     return el;
+  //   });
+  res.status(200).json({
+    product: products[0].returnValues,
+    transits: transits.map((el) => el.returnValues),
+  });
 };
 
 const getCompanyBranches = async (req, res) => {
@@ -234,7 +276,11 @@ const login = async (req, res) => {
 };
 
 const returnProduct = async (req, res) => {
-  const { contractAddress, buyer, sellerAddress } = req.body;
+  let { productNFC, productQR, buyer } = req.body;
+  const { companyAddress: sellerAddress } = req.user;
+  productNFC = decrypt(productNFC);
+  productQR = decrypt(productQR);
+  buyer = encrypt(buyer);
   if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Product cannot be returned here", 400);
   await contractInstance.methods.returnProduct(contractAddress, buyer).send({
@@ -245,7 +291,12 @@ const returnProduct = async (req, res) => {
 };
 
 const resellProduct = async (req, res) => {
-  const { contractAddress, sellerAddress, buyer, newBuyer } = req.body;
+  let { productNFC, productQR, buyer, newBuyer } = req.body;
+  const { companyAddress: sellerAddress } = req.user;
+  productNFC = decrypt(productNFC);
+  productQR = decrypt(productQR);
+  buyer = encrypt(buyer);
+  newBuyer = encrypt(newBuyer);
   if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Product cannot be resold here", 400);
   await contractInstance.resellProduct(contractAddress, buyer, newBuyer).send({
@@ -256,31 +307,43 @@ const resellProduct = async (req, res) => {
 };
 
 const sellProduct = async (req, res) => {
-  const { contractAddress, buyer, sellerAddress } = req.body;
+  let { productNFC, productQR, buyer } = req.body;
+  const { companyAddress: sellerAddress } = req.user;
+  productNFC = decrypt(productNFC);
+  productQR = decrypt(productQR);
+  buyer = encrypt(buyer);
   if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Product cannot be sold here", 400);
   await contractInstance.sellProduct(contractAddress, buyer).send({
     from: sellerAddress,
     gas: 3000000,
   });
-  res.status(200).json({ message: "Successfully finished transaction" });
+  res.status(200).json({ message: "Successfully effectuated transaction" });
 };
 
 const transferProduct = async (req, res) => {
-  const {
-    senderAddress,
-    destinationAddress,
-    contractAddress,
-    latitude,
-    longitude,
-  } = req.body;
+  let { destinationAddress, productAddress, latitude, longitude } = req.body;
+  productAddress = decrypt(productAddress);
+  const { companyAddress: senderAddress } = req.user;
+  if (typeof latitude !== "string") latitude = latitude.toString();
+  if (typeof longitude !== "string") longitude = longitude.toString();
+  if (
+    isNaN(latitude) ||
+    isNaN(longitude) ||
+    parseFloat(latitude) < -90 ||
+    parseFloat(latitude) > 90 ||
+    parseFloat(longitude) < -180 ||
+    parseFloat(longitude) > 180
+  ) {
+    throw new CustomError("Invalid location details", 400);
+  }
   if (
     !accounts.includes(senderAddress.toLowerCase()) ||
     !accounts.includes(destinationAddress.toLowerCase())
   )
     throw new CustomError("Transit party does not exist", 400);
   const contract = await contractInstance.getPastEvents("ProductEvent", {
-    filter: { _newContractAddress: [contractAddress] },
+    filter: { productContractAddress: [productAddress] },
     fromBlock: 0,
     toBlock: "latest",
   });
@@ -290,7 +353,7 @@ const transferProduct = async (req, res) => {
   const response = await contractInstance.methods
     .transferProduct(
       destinationAddress,
-      contractAddress,
+      productAddress,
       parseInt(productId),
       productName,
       latitude.toString(),
@@ -301,19 +364,19 @@ const transferProduct = async (req, res) => {
       from: senderAddress,
       gas: 3000000,
     });
-  res
-    .status(200)
-    .json({ message: "Successfully transferred product", response });
+  res.status(200).json({
+    message: "Successfully transferred product",
+    transit: { ...response.events.TransitEvent.returnValues },
+  });
 };
 
 // api paths
 
 // GET
-app.get("/hello", hello);
+app.use("/hello", hello);
 app.get("/accounts", authMiddleware, exceptionHandler(getAccounts));
 app.get("/product-details", exceptionHandler(getProductDetails));
 app.get("/all-products", authMiddleware, exceptionHandler(getAllProducts));
-app.get("/product-state", exceptionHandler(getProductState));
 app.get("/product-owner", exceptionHandler(getProductCurrentOwner));
 app.get("/branches", authMiddleware, exceptionHandler(getCompanyBranches));
 // POST
@@ -346,6 +409,14 @@ app.use((req, res, next) => {
 // Global error handling through middleware
 app.use((err, req, res, next) => {
   console.log(err.stack);
+  if (err.message.includes("revert")) {
+    err.message = err.message.split("revert ")[1];
+  }
+  if (err.message.includes("invalid string value ")) {
+    let str = err.message.split("_")[1];
+    str = str.substring(0, str.indexOf('"'));
+    err.message = str + "invalid value";
+  }
   if (err.statusCode) {
     return res.status(err.statusCode).json(writeFeedback(err.message));
   }

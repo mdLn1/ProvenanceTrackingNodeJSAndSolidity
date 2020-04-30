@@ -20,7 +20,7 @@ async function addBranches(con) {
     "-0.02048",
     dateAdded,
     {
-      from: "0x2ce06C0028fC4DB7E923aE630aC614fA677260a7",
+      from: "0x464000e9Aba52533Ef3ebdd2223a2a74f319D665",
     }
   );
   newBranch = await con.addBranch(
@@ -29,7 +29,7 @@ async function addBranches(con) {
     "-0.02048",
     dateAdded,
     {
-      from: "0x7B69Af132D1FA62654aCAbb53633B373953758FF",
+      from: "0x9b309f192E8225Cf39eBB631f975c13C60F3E57E",
     }
   );
   return true;
