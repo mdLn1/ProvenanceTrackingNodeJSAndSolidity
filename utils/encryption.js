@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const secretPassword = "jocDeNota10";
+const bcrypt = require("bcryptjs");
 const ENCRYPTION_KEY = crypto
   .createHash("sha256")
   .update(String(secretPassword))
@@ -42,4 +43,14 @@ function decrypt(text) {
   return decrypted.toString();
 }
 
-module.exports = { decrypt, encrypt };
+async function saltHash(text) {
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(text, salt);
+  return hashedPassword;
+}
+
+async function compareSaltedHash(saltedHash, text) {
+  return await bcrypt.compare(text, saltedHash);
+}
+
+module.exports = { decrypt, encrypt, saltHash, compareSaltedHash };

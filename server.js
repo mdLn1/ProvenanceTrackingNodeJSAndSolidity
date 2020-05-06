@@ -11,15 +11,17 @@ const { encrypt, decrypt } = require("./utils/encryption");
 const authMiddleware = require("./middleware/authMiddleware");
 const jwt = require("jsonwebtoken");
 const config = require("config");
+const bcrypt = require("bcryptjs");
+const { saltHash, compareSaltedHash } = require("./utils/encryption");
 //setting up environment
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.LOCAL_NODE));
 const PORT = process.env.PORT || 5000;
 const abi = JSON.parse(
-  '[{"inputs": [],"payable": false,"stateMutability": "nonpayable","type": "constructor"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "companyAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "branchName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "BranchEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "productContractAddress","type": "address"},{"indexed": true,"internalType": "address","name": "manufacturerAddress","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "manufacturerName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "linkToMerch","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "ProductEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "transferredTo","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateTransferred","type": "string"}],"name": "TransitEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "userAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "bool","name": "companyDisabled","type": "bool"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "UserEvent","type": "event"},{"constant": true,"inputs": [{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_password","type": "string"}],"name": "loginUser","outputs": [{"internalType": "address","name": "companyAddress","type": "address"},{"internalType": "bool","name": "disabled","type": "bool"},{"internalType": "enum TrackerContract.RoleType","name": "role","type": "uint8"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_seller","type": "address"},{"internalType": "string","name": "_productName","type": "string"},{"internalType": "string","name": "_linkToMerch","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "createProvenanceContract","outputs": [{"internalType": "uint256","name": "newProductId","type": "uint256"},{"internalType": "string","name": "company","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_password","type": "string"},{"internalType": "string","name": "_role","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addUser","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "string","name": "_branchName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addBranch","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_newParty","type": "address"},{"internalType": "address","name": "_contract","type": "address"},{"internalType": "uint256","name": "_productId","type": "uint256"},{"internalType": "string","name": "productName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateTransferred","type": "string"}],"name": "transferProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "returnProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"},{"internalType": "string","name": "_newBuyer","type": "string"}],"name": "resellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "sellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_productName","type": "string"}],"name": "changeProductDetails","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductCurrentOwner","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"}]'
+  '[{"inputs": [],"payable": false,"stateMutability": "nonpayable","type": "constructor"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "companyAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "branchName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "BranchEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "productContractAddress","type": "address"},{"indexed": true,"internalType": "address","name": "manufacturerAddress","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "manufacturerName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "linkToMerch","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "ProductEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "transferredTo","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateTransferred","type": "string"}],"name": "TransitEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "userAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "bool","name": "companyDisabled","type": "bool"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "UserEvent","type": "event"},{"constant": true,"inputs": [{"internalType": "string","name": "_name","type": "string"}],"name": "getAccountDetails","outputs": [{"internalType": "address","name": "companyAddress","type": "address"},{"internalType": "bool","name": "disabled","type": "bool"},{"internalType": "string","name": "key","type": "string"},{"internalType": "enum TrackerContract.RoleType","name": "role","type": "uint8"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_seller","type": "address"},{"internalType": "string","name": "_productName","type": "string"},{"internalType": "string","name": "_linkToMerch","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "createProvenanceContract","outputs": [{"internalType": "uint256","name": "newProductId","type": "uint256"},{"internalType": "string","name": "company","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_password","type": "string"},{"internalType": "string","name": "_role","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addUser","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "string","name": "_branchName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addBranch","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_newParty","type": "address"},{"internalType": "address","name": "_contract","type": "address"},{"internalType": "uint256","name": "_productId","type": "uint256"},{"internalType": "string","name": "productName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateTransferred","type": "string"}],"name": "transferProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "returnProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"},{"internalType": "string","name": "_newBuyer","type": "string"}],"name": "resellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "sellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_productName","type": "string"}],"name": "changeProductDetails","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductCurrentOwner","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"}]'
 );
 var contractInstance = new web3.eth.Contract(
   abi,
-  "0x34651197d094905fBD7EF207063ACA4FA9cb69Db"
+  "0xcF20F721920D6bb1051AD1d0C5463719282c5A63"
 );
 let accounts;
 
@@ -40,15 +42,24 @@ app.use(initAccounts);
 
 // API functions
 
-const hello = (req, res) => {
-  throw new CustomError("error hello");
-  res.status(400).json({ message: "hello" });
+const passwordHashing = async (req, res) => {
+  let hashed = [];
+  let passwords = ["password", "password", "password"];
+  console.log("Output: ");
+  hashed = await Promise.all(
+    passwords.map(async (el) => {
+      const hash = await saltHash(el);
+      console.log(hash);
+      return hash;
+    })
+  );
+  res.status(200).json({ hashedPasswords: hashed });
 };
 
 const test = async (req, res) => {
   const contract = await contractInstance.getPastEvents("ProductEvent", {
     filter: {
-      _newContractAddress: ["0x34651197d094905fBD7EF207063ACA4FA9cb69Db"],
+      _newContractAddress: ["0xcF20F721920D6bb1051AD1d0C5463719282c5A63"],
     },
     fromBlock: 0,
     toBlock: "latest",
@@ -251,12 +262,13 @@ const getCompanyBranches = async (req, res) => {
 
 const login = async (req, res) => {
   const { username, password } = req.body;
-  const resp = await contractInstance.methods
-    .loginUser(username, password)
-    .call({
-      from: accounts[0],
-      gas: 3000000,
-    });
+  const resp = await contractInstance.methods.getAccountDetails(username).call({
+    from: accounts[0],
+    gas: 3000000,
+  });
+  if (!(await bcrypt.compare(password, resp.key))) {
+    throw new CustomError("Invalid login attempt", 400);
+  }
   const user = {
     companyAddress: resp.companyAddress,
     disabled: resp.disabled,
@@ -373,7 +385,7 @@ const transferProduct = async (req, res) => {
 // api paths
 
 // GET
-app.use("/hello", hello);
+app.use("/hello", passwordHashing);
 app.get("/accounts", authMiddleware, exceptionHandler(getAccounts));
 app.get("/product-details", exceptionHandler(getProductDetails));
 app.get("/all-products", authMiddleware, exceptionHandler(getAllProducts));

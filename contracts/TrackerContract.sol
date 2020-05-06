@@ -63,20 +63,21 @@ contract TrackerContract {
         admin = msg.sender;
     }
 
-    function loginUser(string memory _name, string memory _password)
+    function getAccountDetails(string memory _name)
         public
         view
-        returns (address companyAddress, bool disabled, RoleType role)
+        returns (address companyAddress, bool disabled, string memory key, RoleType role)
     {
         User memory userToLogin = authorizedUsers[usersByName[_name]];
         require(
-            keccak256(bytes(userToLogin.password)) ==
-                keccak256(bytes(_password)),
+            userToLogin.exists,
             "Invalid login attempt"
         );
         companyAddress = usersByName[_name];
         disabled = userToLogin.disabled;
         role = userToLogin.role;
+        key = userToLogin.password;
+
     }
 
     function createProvenanceContract(

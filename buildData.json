@@ -1,38 +1,38 @@
 [
     [
-        "0x02663Fb524247d01DA8B7258CC34516446dC4171",
+        "0x9A16D4Ed501f4692bd6a09C51B3646C0E73092cb",
         "Nike",
-        "password",
+        "$2a$10$s9dv0fK0J0iQg44WySWtyuSjIynfXeknV7nOXSNJHVqLb6RXlx28O",
         "manufacturer"
     ],
     [
-        "0xBd76eD91E3C06cf2c2188973Cd36Ef9A661a9986",
+        "0xe49883f3f2BD568a19BD1CcbBfdA4714b0A5de68",
         "Adidas",
-        "password",
+        "$2a$10$4R6I6RhhUX/4v2C.apfQNu1qQYZguuMBzSPe4/OlNqtUvjTAQbYTm",
         "manufacturer"
     ],
     [
-        "0x464000e9Aba52533Ef3ebdd2223a2a74f319D665",
+        "0x3b40D98eD9CB71FbbB4aCC3fF2ba85a41D891685",
         "Tesco",
-        "password",
+        "$2a$10$Nv3wGpXwYSB9TH.vd1vF6eLq5P8M2utJ9gTwLN2PjfFw27Bm0875u",
         "seller"
     ],
     [
-        "0x9b309f192E8225Cf39eBB631f975c13C60F3E57E",
+        "0x3930612cd48d3E8A0CeEe2E3f7ec15fecde0C962",
         "Sainsbury's",
-        "password",
+        "$2a$10$RKz20k4SV5iO9cITs0s5Oe/qMao7sT.CL1f9K5GGjmwxwjveMKTxW",
         "seller"
     ],
     [
-        "0xD82d6f278c01De382F4f768C15C14138C81Ed33d",
+        "0x8BEC691ADF972CA8B5DAA67e2ae005F42921a3F6",
         "Amazon",
-        "password",
+        "$2a$10$U8U1ITv4OYKKCeEpOvQTvu/mARnq1nGoaBzTuHA1k/H9XB/mWFYre",
         "distributor"
     ],
     [
-        "0x09C5Adf76Cf8d07235D2C8e731BDd64376667EB3",
+        "0x36E2C45F710b15180C47F6e677C3d0549ADB9CB6",
         "DPD",
-        "password",
+        "$2a$10$GYSbTBNaLGELiUEeB.LLmegFCmsf9Sa1n6Uehc5CTLi6/PNik5.Wi",
         "distributor"
     ]
 ]
