@@ -98,6 +98,10 @@ const createProductContract = async (req, res) => {
     longitude,
   } = req.body;
   const { companyAddress: senderAddress } = req.user;
+
+  if (!linkToMerch) linkToMerch = "Not available";
+  if (!accounts.includes(senderAddress.toLowerCase()))
+    throw new CustomError("Invalid account address", 400);
   if (
     isNaN(latitude) ||
     isNaN(longitude) ||
@@ -106,11 +110,11 @@ const createProductContract = async (req, res) => {
     parseFloat(longitude) < -180 ||
     parseFloat(longitude) > 180
   ) {
-    throw new CustomError("Invalid location details", 400);
+    throw new CustomError(
+      "Invalid location details, please check that location is enabled and permissions granted",
+      400
+    );
   }
-  if (!linkToMerch) linkToMerch = "Not available";
-  if (!accounts.includes(senderAddress.toLowerCase()))
-    throw new CustomError("Invalid sender account address", 400);
   if (sellerName) {
     let users = await contractInstance.getPastEvents("UserEvent", {
       fromBlock: 0,
@@ -122,7 +126,7 @@ const createProductContract = async (req, res) => {
     if (foundUser) sellerAddress = foundUser.returnValues.userAddress;
   }
   if (!accounts.includes(sellerAddress.toLowerCase()))
-    throw new CustomError("Invalid seller account address", 400);
+    throw new CustomError("Invalid seller account", 400);
   const currentDate = new Date().toISOString();
 
   const {
@@ -161,7 +165,7 @@ const changeProductDetails = async (req, res) => {
 const getAllProducts = async (req, res) => {
   const { companyAddress, role } = req.user;
   if (!accounts.includes(companyAddress.toLowerCase()))
-    throw new CustomError("Account does not exist", 400);
+    throw new CustomError("Invalid account address", 400);
   let products = [];
   if (role == 1 || role == 2) {
     products = [];
@@ -205,8 +209,38 @@ const getProductCurrentOwner = async (req, res) => {
   res.status(200).json({ owner: transits[0].companyName });
 };
 
+const getProductById = async (req, res) => {
+  let { productId } = req.body;
+
+  let products = await contractInstance.getPastEvents("ProductEvent", {
+    filter: { productId: [parseInt(productId)] },
+    fromBlock: 0,
+    toBlock: "latest",
+  });
+  if (products.length < 1) throw new CustomError("Product not found", 400);
+  let transits = await contractInstance.getPastEvents("TransitEvent", {
+    filter: { productId: [parseInt(productId)] },
+    fromBlock: 0,
+    toBlock: "latest",
+  });
+  if (transits.length == 0) {
+    throw new CustomError("Product does not exist in our records", 400);
+  }
+
+  res.status(200).json({
+    product: products[0].returnValues,
+    transits: transits.map((el) => el.returnValues),
+  });
+};
+
 const getProductDetails = async (req, res) => {
   let { product: productAddress } = req.query;
+  if (
+    !productAddress.includes(":") ||
+    productAddress.split(":")[0].length < 15
+  ) {
+    throw new CustomError("Product does not exist", 400);
+  }
   productAddress = decrypt(productAddress);
   let products = await contractInstance.getPastEvents("ProductEvent", {
     filter: { productContractAddress: [productAddress] },
@@ -335,7 +369,10 @@ const transferProduct = async (req, res) => {
     parseFloat(longitude) < -180 ||
     parseFloat(longitude) > 180
   ) {
-    throw new CustomError("Invalid location details", 400);
+    throw new CustomError(
+      "Invalid location details, please check that location is active and permissions are granted to the app",
+      400
+    );
   }
   if (
     !accounts.includes(senderAddress.toLowerCase()) ||
@@ -381,6 +418,7 @@ app.get("/product-owner", exceptionHandler(getProductCurrentOwner));
 app.get("/branches", authMiddleware, exceptionHandler(getCompanyBranches));
 // POST
 app.post("/add-user", authMiddleware, exceptionHandler(createUser));
+app.post("/product-details", authMiddleware, exceptionHandler(getProductById));
 app.post("/login", exceptionHandler(login));
 app.post(
   "/add-contract",
