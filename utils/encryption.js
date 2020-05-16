@@ -9,9 +9,17 @@ const ENCRYPTION_KEY = crypto
 
 ("use strict");
 
+const secretKey = "strongSecretKey123-|";
+
 // https://gist.github.com/vlucas/2bd40f62d20c1d49237a109d491974eb
 
 const IV_LENGTH = 16; // For AES, this is always 16
+
+const hmacSha = (data) => {
+  let hmac = crypto.createHmac("sha512", secretKey);
+  hmac.update(data);
+  return hmac.digest("hex");
+};
 
 function encrypt(text) {
   let iv = crypto.randomBytes(IV_LENGTH);
@@ -53,4 +61,4 @@ async function compareSaltedHash(saltedHash, text) {
   return await bcrypt.compare(text, saltedHash);
 }
 
-module.exports = { decrypt, encrypt, saltHash, compareSaltedHash };
+module.exports = { decrypt, encrypt, saltHash, compareSaltedHash, hmacSha };

@@ -1,6 +1,17 @@
-var TrackerContract = artifacts.require('TrackerContract');
- 
-module.exports = function(deployer) {
+var TrackerContract = artifacts.require("TrackerContract");
+
+module.exports = function (deployer, network, accounts) {
   // Use deployer to state migration tasks.
-  deployer.deploy(TrackerContract);
+  const dateAdded = new Date();
+  let stringDate =
+    dateAdded.toLocaleDateString() + " at " + dateAdded.toLocaleTimeString();
+  deployer.deploy(
+    TrackerContract,
+    "ContractCreator",
+    "distributor",
+    stringDate,
+    {
+      from: accounts[0],
+    }
+  );
 };

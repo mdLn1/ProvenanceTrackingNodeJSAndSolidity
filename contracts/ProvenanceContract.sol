@@ -27,20 +27,20 @@ contract ProvenanceContract {
     modifier onlyMandS(address sender) {
         require(
             sender == manufacturer || sender == seller,
-            "Only Manufacturer and seller can perform this action"
+            "Only original manufacturer/seller can perform this action"
         );
         _;
     }
 
     modifier onlySeller(address sender) {
-        require(sender == seller, "Only seller can perform this action");
+        require(sender == seller, "Only original seller can perform this action");
         _;
     }
 
     modifier onlyCurrentHolder(address sender) {
         require(
             sender == currentHolder,
-            "Only current holder of the product can parform this action"
+            "Only current holder of the product can perform this action"
         );
         _;
     }
@@ -65,24 +65,29 @@ contract ProvenanceContract {
         linkToMerch = _linkToMerch;
     }
 
-    function editProduct(address _sender, string memory _newName)
-        public
-        onlyMandS(_sender)
-    {
-        productName = _newName;
-    }
-
     function getCurrentOwner() public view returns (address) {
         return currentHolder;
+    }
+
+    function getProductState() public view returns (uint) {
+        if(State == StateType.Created) {
+            return 0;
+        } else if (State == StateType.InTransit) {
+            return 1;
+        } else if (State == StateType.InShop) {
+            return 2;
+        }
+        return 3;
     }
 
     function returnProduct(address _sender, string memory _buyer)
         public
         onlySeller(_sender)
+        returns (uint)
     {
         require(
             keccak256(bytes(buyer)) == keccak256(bytes(_buyer)),
-            "Operation failed, buyer entered invalid name"
+            "Operation failed, buyer entered invalid secure key"
         );
         State = StateType.InShop;
         buyer = "";
@@ -95,11 +100,11 @@ contract ProvenanceContract {
     ) public onlySeller(_sender) {
         require(
             keccak256(bytes(buyer)) == keccak256(bytes(_buyer)),
-            "Operation failed, buyer entered invalid name"
+            "Operation failed, buyer entered invalid secure key"
         );
         require(
-            bytes(_newBuyer).length > 0,
-            "The new owner must enter their name"
+            bytes(_newBuyer).length > 8,
+            "The new owner must enter a secure key"
         );
         buyer = _newBuyer;
     }
@@ -112,7 +117,7 @@ contract ProvenanceContract {
             State == StateType.InShop,
             "Product must be inside the shop to sell it"
         );
-        require(bytes(_buyer).length > 0, "The customer must enter their name");
+        require(bytes(_buyer).length > 8, "The customer must enter a secure key");
         buyer = _buyer;
     }
 // 0 - code finished execution, someone else than seller tried transferring product?

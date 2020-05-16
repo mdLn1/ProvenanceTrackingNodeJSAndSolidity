@@ -4,16 +4,11 @@ import {ProvenanceContract} from "./ProvenanceContract.sol";
 
 contract TrackerContract {
     enum RoleType {Manufacturer, Seller, Distributor}
-    // admin, can be contract deployer
-    address admin;
     // registered users
     mapping(address => User) private authorizedUsers;
     mapping(string => address) private usersByName;
     uint256 private productId = 1;
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "Only an admin can perform this action");
-        _;
-    }
+
     // add also state?
     event TransitEvent(
         address indexed transferredTo,
@@ -22,7 +17,8 @@ contract TrackerContract {
         string productName,
         string latitudeLocation,
         string longitudeLocation,
-        string dateTransferred
+        string dateTransferred,
+        uint productState
     );
 
     event ProductEvent(
@@ -47,37 +43,39 @@ contract TrackerContract {
     event UserEvent(
         address indexed userAddress,
         string companyName,
+        string role,
         bool companyDisabled,
         string dateAdded
     );
 
     struct User {
         string companyName;
-        string password;
         bool exists;
         bool disabled;
         RoleType role;
     }
 
-    constructor() public {
-        admin = msg.sender;
-    }
-
-    function getAccountDetails(string memory _name)
-        public
-        view
-        returns (address companyAddress, bool disabled, string memory key, RoleType role)
-    {
-        User memory userToLogin = authorizedUsers[usersByName[_name]];
-        require(
-            userToLogin.exists,
-            "Invalid login attempt"
+    constructor(
+        string memory _name,
+        string memory _role,
+        string memory _dateAdded
+    ) public {
+        RoleType assignedRole;
+        if (keccak256(bytes(_role)) == keccak256(bytes("seller"))) {
+            assignedRole = RoleType.Seller;
+        } else if (keccak256(bytes(_role)) == keccak256(bytes("distributor"))) {
+            assignedRole = RoleType.Distributor;
+        } else {
+            assignedRole = RoleType.Manufacturer;
+        }
+        authorizedUsers[msg.sender] = User(
+            _name,
+            true,
+            false,
+            assignedRole
         );
-        companyAddress = usersByName[_name];
-        disabled = userToLogin.disabled;
-        role = userToLogin.role;
-        key = userToLogin.password;
-
+        usersByName[_name] = msg.sender;
+        emit UserEvent(msg.sender, _name, _role, false, _dateAdded);
     }
 
     function createProvenanceContract(
@@ -91,6 +89,11 @@ contract TrackerContract {
         require(
             authorizedUsers[msg.sender].role == RoleType.Manufacturer,
             "You are not authorized to create a contract"
+        );
+        require(
+            authorizedUsers[_seller].exists == true &&
+                authorizedUsers[_seller].role == RoleType.Seller,
+            "The seller account provided is not a seller"
         );
         company = authorizedUsers[msg.sender].companyName;
         address newContract = address(
@@ -118,7 +121,8 @@ contract TrackerContract {
             _productName,
             _latitudeLocation,
             _longitudeLocation,
-            _dateAdded
+            _dateAdded,
+            0
         );
         newProductId = productId;
         productId = productId + 1;
@@ -127,10 +131,17 @@ contract TrackerContract {
     function addUser(
         address _accountAddress,
         string memory _name,
-        string memory _password,
         string memory _role,
         string memory _dateAdded
-    ) public onlyAdmin {
+    ) public {
+        require(
+            authorizedUsers[msg.sender].exists == true,
+            "You are not allowed to add accounts"
+        );
+        require(
+            authorizedUsers[_accountAddress].exists == false,
+            "The address provided is already linked to an account"
+        );
         RoleType assignedRole;
         if (keccak256(bytes(_role)) == keccak256(bytes("seller"))) {
             assignedRole = RoleType.Seller;
@@ -141,13 +152,12 @@ contract TrackerContract {
         }
         authorizedUsers[_accountAddress] = User(
             _name,
-            _password,
             true,
             false,
             assignedRole
         );
         usersByName[_name] = _accountAddress;
-        emit UserEvent(_accountAddress, _name, false, _dateAdded);
+        emit UserEvent(_accountAddress, _name, _role, false, _dateAdded);
     }
 
     function addBranch(
@@ -180,7 +190,7 @@ contract TrackerContract {
             "User does not exist, please do not make transfer"
         );
         string memory company = authorizedUsers[_newParty].companyName;
-        uint256 result = ProvenanceContract(_contract).transferProduct(
+        uint result = ProvenanceContract(_contract).transferProduct(
             msg.sender,
             _newParty,
             company
@@ -193,7 +203,8 @@ contract TrackerContract {
                 productName,
                 _latitudeLocation,
                 _longitudeLocation,
-                _dateTransferred
+                _dateTransferred,
+                result
             );
     }
 
@@ -217,17 +228,15 @@ contract TrackerContract {
         ProvenanceContract(_contract).sellProduct(msg.sender, _buyer);
     }
 
-    function changeProductDetails(address _contract, string memory _productName)
-        public
-    {
-        ProvenanceContract(_contract).editProduct(msg.sender, _productName);
-    }
-
     function getProductCurrentOwner(address _contract)
         public
         view
         returns (address)
     {
         return ProvenanceContract(_contract).getCurrentOwner();
+    }
+
+    function getProductState(address _contract) public view returns(uint){
+        return ProvenanceContract(_contract).getProductState();
     }
 }

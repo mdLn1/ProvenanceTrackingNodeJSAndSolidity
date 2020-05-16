@@ -1,12 +1,17 @@
 // let user = await con.addUser("accountAddress", "name", "password", "role")
 // roles: manufacturer, distributor, seller
-const dateAdded = new Date().toISOString();
-const parsedJSON = require("./buildData.json");
+const parsedJSON = require("./buildDataProd.json");
 
+const dateAdded = new Date();
+let stringDate =
+  dateAdded.toLocaleDateString() + " at " + dateAdded.toLocaleTimeString();
 async function addUsers(con) {
   const all = await Promise.all(
     parsedJSON.map(async (el) => {
-      const user = await con.addUser(...el, dateAdded);
+      const user = await con.addUser(
+        ...el,
+        stringDate
+      );
       return user;
     })
   );

@@ -1,44 +1,47 @@
 //imports
 const express = require("express");
 const Web3 = require("web3");
+const { check } = require("express-validator");
 require("dotenv").config();
 const CustomError = require("./utils/CustomError");
 const app = express();
 const writeFeedback = require("./utils/writeFeedback");
 const exceptionHandler = require("./utils/exceptionHandler");
 const promisify = require("./utils/promisify");
-const { encrypt, decrypt } = require("./utils/encryption");
 const authMiddleware = require("./middleware/authMiddleware");
+const middlewareExceptionHandler = require("./utils/middlewareExceptionHandler");
+const errorCheckerMiddleware = require("./middleware/errorCheckerMiddleware");
 const jwt = require("jsonwebtoken");
 const config = require("config");
-const bcrypt = require("bcryptjs");
-const { saltHash, compareSaltedHash } = require("./utils/encryption");
+const { encrypt, decrypt, saltHash, hmacSha } = require("./utils/encryption");
 //setting up environment
-const web3 = new Web3(new Web3.providers.HttpProvider(process.env.LOCAL_NODE));
+if (process.env.NODE_ENV === "test") {
+  process.env.LOCAL_NODE = "http://127.0.0.1:10545";
+}
+var web3 =
+  process.env.NODE_ENV === "production"
+    ? new Web3(process.env.REMOTE_NODE)
+    : new Web3(process.env.LOCAL_NODE);
+
 const PORT = process.env.PORT || 5000;
+
 const abi = JSON.parse(
-  '[{"inputs": [],"payable": false,"stateMutability": "nonpayable","type": "constructor"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "companyAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "branchName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "BranchEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "productContractAddress","type": "address"},{"indexed": true,"internalType": "address","name": "manufacturerAddress","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "manufacturerName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "linkToMerch","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "ProductEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "transferredTo","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateTransferred","type": "string"}],"name": "TransitEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "userAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "bool","name": "companyDisabled","type": "bool"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "UserEvent","type": "event"},{"constant": true,"inputs": [{"internalType": "string","name": "_name","type": "string"}],"name": "getAccountDetails","outputs": [{"internalType": "address","name": "companyAddress","type": "address"},{"internalType": "bool","name": "disabled","type": "bool"},{"internalType": "string","name": "key","type": "string"},{"internalType": "enum TrackerContract.RoleType","name": "role","type": "uint8"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_seller","type": "address"},{"internalType": "string","name": "_productName","type": "string"},{"internalType": "string","name": "_linkToMerch","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "createProvenanceContract","outputs": [{"internalType": "uint256","name": "newProductId","type": "uint256"},{"internalType": "string","name": "company","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_password","type": "string"},{"internalType": "string","name": "_role","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addUser","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "string","name": "_branchName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addBranch","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_newParty","type": "address"},{"internalType": "address","name": "_contract","type": "address"},{"internalType": "uint256","name": "_productId","type": "uint256"},{"internalType": "string","name": "productName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateTransferred","type": "string"}],"name": "transferProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "returnProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"},{"internalType": "string","name": "_newBuyer","type": "string"}],"name": "resellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "sellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_productName","type": "string"}],"name": "changeProductDetails","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductCurrentOwner","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"}]'
+  '[{"inputs": [{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_role","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "constructor"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "transferredTo","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateTransferred","type": "string"},{"indexed": false,"internalType": "uint256","name": "productState","type": "uint256"}],"name": "TransitEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "productContractAddress","type": "address"},{"indexed": true,"internalType": "address","name": "manufacturerAddress","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "manufacturerName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "linkToMerch","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "ProductEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "companyAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "branchName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "BranchEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "userAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "role","type": "string"},{"indexed": false,"internalType": "bool","name": "companyDisabled","type": "bool"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "UserEvent","type": "event"},{"constant": false,"inputs": [{"internalType": "address","name": "_seller","type": "address"},{"internalType": "string","name": "_productName","type": "string"},{"internalType": "string","name": "_linkToMerch","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "createProvenanceContract","outputs": [{"internalType": "uint256","name": "newProductId","type": "uint256"},{"internalType": "string","name": "company","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_role","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addUser","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "string","name": "_branchName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addBranch","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_newParty","type": "address"},{"internalType": "address","name": "_contract","type": "address"},{"internalType": "uint256","name": "_productId","type": "uint256"},{"internalType": "string","name": "productName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateTransferred","type": "string"}],"name": "transferProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "returnProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"},{"internalType": "string","name": "_newBuyer","type": "string"}],"name": "resellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "sellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductCurrentOwner","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductState","outputs": [{"internalType": "uint256","name": "","type": "uint256"}],"payable": false,"stateMutability": "view","type": "function"}]'
 );
-var contractInstance = new web3.eth.Contract(
-  abi,
-  "0xcF20F721920D6bb1051AD1d0C5463719282c5A63"
-);
+var contractInstance = new web3.eth.Contract(abi, process.env.CONTRACT_ADDRESS);
+// const account = web3.eth.accounts.privateKeyToAccount(
+//   "0x43f3ab15b4ce3914e8a292c0781db8c71901a6a939f91704ee0cbc53ce382d75"
+// );
+// web3.eth.accounts.wallet.add(account);
+// web3.eth.defaultAccount = account.address;
 let accounts;
 
 // existing roles
 const roles = ["manufacturer", "seller", "distributor"];
 
-//middleware functions
-const initAccounts = async (req, res, next) => {
-  if (!accounts) accounts = await promisify(web3.eth.getAccounts);
-  accounts = accounts.map((el) => el.toLowerCase());
-  next();
-};
-
 // initialize accounts
 app.use(express.json({ extended: false }));
 app.use(express.urlencoded({ extended: false }));
-app.use(initAccounts);
 
 // API functions
 
@@ -56,11 +59,19 @@ const passwordHashing = async (req, res) => {
   res.status(200).json({ hashedPasswords: hashed });
 };
 
+const verifyLocation = (latitude, longitude) => {
+  return (
+    isNaN(latitude) ||
+    isNaN(longitude) ||
+    parseFloat(latitude) < -90 ||
+    parseFloat(latitude) > 90 ||
+    parseFloat(longitude) < -180 ||
+    parseFloat(longitude) > 180
+  );
+};
+
 const test = async (req, res) => {
-  const contract = await contractInstance.getPastEvents("ProductEvent", {
-    filter: {
-      _newContractAddress: ["0xcF20F721920D6bb1051AD1d0C5463719282c5A63"],
-    },
+  const contract = await contractInstance.getPastEvents("UserEvent", {
     fromBlock: 0,
     toBlock: "latest",
   });
@@ -69,14 +80,29 @@ const test = async (req, res) => {
 
 app.use("/test", exceptionHandler(test));
 
+const prepareNode = async (req, res, next) => {
+  const { nodeAddress, companyAddress, password } = req.user;
+  if (process.env.NODE_ENV === "production") {
+    web3 = new Web3(new Web3.providers.HttpProvider(nodeAddress));
+    const res = await web3.eth.personal.unlockAccount(
+      companyAddress,
+      password,
+      10000
+    );
+    web3.eth.defaultAccount = companyAddress;
+  }
+  accounts = await promisify(web3.eth.getAccounts);
+  accounts = accounts.map((el) => el.toLowerCase());
+  next();
+};
+
 const createUser = async (req, res) => {
-  let { senderAddress, userToCreateAddress, name, password, role } = req.body;
-  if (
-    !accounts.includes(userToCreateAddress.toLowerCase()) ||
-    !accounts.includes(senderAddress.toLowerCase())
-  )
+  let { userToCreateAddress, name, role } = req.body;
+  const { companyAddress: senderAddress } = req.user;
+  if (!accounts.includes(senderAddress.toLowerCase()))
     throw new CustomError("Invalid account address", 400);
   role = role.toLowerCase();
+  password = await saltHash(password);
   if (!roles.includes(role))
     throw new CustomError("Chosen role does not exist", 400);
   let users = await contractInstance.getPastEvents("UserEvent", {
@@ -87,16 +113,37 @@ const createUser = async (req, res) => {
   if (users.length > 0) {
     throw new CustomError("User already exists", 400);
   }
-  const currentDate = new Date().toISOString();
+  const dateAdded = new Date();
+  let stringDate =
+    dateAdded.toLocaleDateString() + " at " + dateAdded.toLocaleTimeString();
   await contractInstance.methods
-    .addUser(userToCreateAddress, name, password, role, currentDate)
+    .addUser(userToCreateAddress, name, role, stringDate)
     .send({
-      from: senderAddress,
       gas: 3000000,
     });
   res
     .status(201)
     .json({ success: "Successfully added new " + (role ? role : "User") });
+};
+
+const findAccountExists = async (val) => {
+  let users = val.startsWith("0x")
+    ? await contractInstance.getPastEvents("UserEvent", {
+        filter: {
+          userAddress: [val],
+        },
+        fromBlock: 0,
+        toBlock: "latest",
+      })
+    : await contractInstance.getPastEvents("UserEvent", {
+        fromBlock: 0,
+        toBlock: "latest",
+      });
+  return val.startsWith("0x")
+    ? users.length === 1
+      ? users[0]
+      : undefined
+    : users.find((el) => el.returnValues.companyName === val);
 };
 
 const createProductContract = async (req, res) => {
@@ -108,41 +155,28 @@ const createProductContract = async (req, res) => {
     latitude,
     longitude,
   } = req.body;
-  const { companyAddress: senderAddress } = req.user;
-
+  const { companyAddress: senderAddress, role } = req.user;
+  if (parseInt(role) !== 0)
+    throw new CustomError("Only manufacturers can perform this action", 401);
   if (!linkToMerch) linkToMerch = "Not available";
   if (!accounts.includes(senderAddress.toLowerCase()))
     throw new CustomError("Invalid account address", 400);
-  if (
-    isNaN(latitude) ||
-    isNaN(longitude) ||
-    parseFloat(latitude) < -90 ||
-    parseFloat(latitude) > 90 ||
-    parseFloat(longitude) < -180 ||
-    parseFloat(longitude) > 180
-  ) {
+  if (verifyLocation(latitude, longitude)) {
     throw new CustomError(
       "Invalid location details, please check that location is enabled and permissions granted",
       400
     );
   }
-  if (sellerName) {
-    let users = await contractInstance.getPastEvents("UserEvent", {
-      fromBlock: 0,
-      toBlock: "latest",
-    });
-    let foundUser = users.find(
-      (el) => el.returnValues.companyName === sellerName
-    );
-    if (foundUser) sellerAddress = foundUser.returnValues.userAddress;
-  }
-  if (!accounts.includes(sellerAddress.toLowerCase()))
-    throw new CustomError("Invalid seller account", 400);
-  const currentDate = new Date().toISOString();
+  let foundUser = await findAccountExists(sellerName || sellerAddress);
+  if (foundUser) sellerAddress = foundUser.returnValues.userAddress;
+  else throw new CustomError("Seller account does not exist", 400);
 
-  const {
-    events: { ProductEvent },
-  } = await contractInstance.methods
+  const dateAdded = new Date();
+  let currentDate =
+    dateAdded.toLocaleDateString() + " at " + dateAdded.toLocaleTimeString();
+  accounts = await promisify(web3.eth.getAccounts);
+  contractInstance = new web3.eth.Contract(abi, process.env.CONTRACT_ADDRESS);
+  const resp = await contractInstance.methods
     .createProvenanceContract(
       sellerAddress,
       productName,
@@ -155,21 +189,13 @@ const createProductContract = async (req, res) => {
       from: senderAddress,
       gas: 3000000,
     });
+  const {
+    events: { ProductEvent },
+  } = resp;
   res.status(201).json({
     ...ProductEvent.returnValues,
     productQR: encrypt(ProductEvent.returnValues.productContractAddress),
     productNFC: encrypt(ProductEvent.returnValues.productId),
-  });
-};
-
-// you need to check this one, add more options
-const changeProductDetails = async (req, res) => {
-  const { contractAddress, newProductName, senderAddress } = req.body;
-  if (!accounts.includes(senderAddress.toLowerCase()))
-    throw new CustomError("Invalid account address", 400);
-  await contractInstance.changeProductDetails(contractAddress, newProductName, {
-    from: senderAddress,
-    gas: 3000000,
   });
 };
 
@@ -192,12 +218,8 @@ const getAllProducts = async (req, res) => {
     .json({ products: products.map((el) => ({ ...el.returnValues })) });
 };
 
-const getAccounts = async (req, res) => {
-  res.status(200).json({ accounts });
-};
-
 const getProductCurrentOwner = async (req, res) => {
-  const { productId } = req.body;
+  const { product: productAddress } = req.body;
   let transits = await contractInstance.getPastEvents("TransitEvent", {
     filter: { productId: [productId] },
     fromBlock: 0,
@@ -206,18 +228,22 @@ const getProductCurrentOwner = async (req, res) => {
   if (transits.length == 0) {
     throw new CustomError("Product does not exist in our records", 400);
   }
-  // transits = transits
-  //   .map((el) => ({
-  //     ...el.returnValues,
-  //     dateEdited: new Date(el.returnValues.dateTransferred),
-  //   }))
-  //   .sort((a, b) => b.dateEdited - a.dateEdited)
-  //   .map((el) => {
-  //     delete el.dateEdited;
-  //     return el;
-  //   });
-  transits = transits.reverse();
-  res.status(200).json({ owner: transits[0].companyName });
+  const ownerAddress = await contractInstance.methods
+    .getProductCurrentOwner(productAddress)
+    .send({
+      from: senderAddress,
+      gas: 3000000,
+    });
+  const [
+    {
+      returnValues: { companyName },
+    },
+  ] = await contractInstance.getPastEvents("UserEvent", {
+    filter: { userAddress: [ownerAddress] },
+    fromBlock: 0,
+    toBlock: "latest",
+  });
+  res.status(200).json({ owner: companyName });
 };
 
 const getProductById = async (req, res) => {
@@ -252,7 +278,11 @@ const getProductDetails = async (req, res) => {
   ) {
     throw new CustomError("Product does not exist", 400);
   }
-  productAddress = decrypt(productAddress);
+  try {
+    productAddress = decrypt(productAddress);
+  } catch (error) {
+    throw new CustomError("Product does not exist", 400);
+  }
   let products = await contractInstance.getPastEvents("ProductEvent", {
     filter: { productContractAddress: [productAddress] },
     fromBlock: 0,
@@ -267,16 +297,6 @@ const getProductDetails = async (req, res) => {
   if (transits.length == 0) {
     throw new CustomError("Product does not exist in our records", 400);
   }
-  // transits = transits
-  //   .map((el) => ({
-  //     ...el.returnValues,
-  //     dateEdited: new Date(el.returnValues.dateTransferred),
-  //   }))
-  //   .sort((a, b) => b.dateEdited - a.dateEdited)
-  //   .map((el) => {
-  //     delete el.dateEdited;
-  //     return el;
-  //   });
   res.status(200).json({
     product: products[0].returnValues,
     transits: transits.map((el) => el.returnValues),
@@ -290,31 +310,48 @@ const getCompanyBranches = async (req, res) => {
     fromBlock: 0,
     toBlock: "latest",
   });
-  // const user = await contractInstance.methods.loginUser("Tesco", "password").call();
   return res.status(200).json({ branches });
 };
 
 const login = async (req, res) => {
-  const { username, password } = req.body;
-  const resp = await contractInstance.methods.getAccountDetails(username).call({
-    from: accounts[0],
-    gas: 3000000,
-  });
-  if (!(await bcrypt.compare(password, resp.key))) {
-    throw new CustomError("Invalid login attempt", 400);
-  }
+  const { username, password, nodeAddress } = req.body;
+  web3.eth.Contract.defaultAccount =
+    process.env.NODE_ENV !== "production"
+      ? "0xbEEBc172694c0f55eC41Efb36f1a85aEcE3C46E2" // test truffle first account
+      : "0xACdACF1B0E8F27a5A1167Bead1f7539cf7B23ae4";
+  let resp, unlockSuccess;
+  // if (process.env.NODE_ENV === "production") {
+  //   unlockSuccess = await web3.eth.personal.unlockAccount(
+  //     mainAccount, // account to unlock on main node
+  //     password,
+  //     15000
+  //   );
+  // }
+  // if (!unlockSuccess) throw new CustomError("Action failed, please try again");
+  resp = await findAccountExists(username);
+  if (resp === undefined) throw new CustomError("Invalid account or password");
   const user = {
-    companyAddress: resp.companyAddress,
-    disabled: resp.disabled,
-    role: parseInt(resp.role),
+    companyAddress: resp.returnValues.userAddress,
+    disabled: !!resp.returnValues.disabled,
+    role:
+      resp.returnValues.role === "manufacturer"
+        ? 0
+        : resp.returnValues.role === "distributor"
+        ? 2
+        : 1,
     companyName: username,
+    nodeAddress: nodeAddress,
+    password: password,
   };
   const payload = {
     user,
   };
-  const token = jwt.sign(payload, config.get("jwtSecret"), {
+
+  let token = jwt.sign(payload, config.get("jwtSecret"), {
     expiresIn: 60000,
   });
+  token = encrypt(token);
+  delete user.password;
   res.status(200).json({
     token,
     user,
@@ -322,14 +359,24 @@ const login = async (req, res) => {
 };
 
 const returnProduct = async (req, res) => {
-  let { productNFC, productQR, buyer } = req.body;
-  const { companyAddress: sellerAddress } = req.user;
-  productNFC = decrypt(productNFC);
-  productQR = decrypt(productQR);
-  buyer = encrypt(buyer);
+  let { productNFC, productQR, buyer, latitude, longitude } = req.body;
+  const { companyAddress: sellerAddress, role } = req.user;
+  try {
+    productNFC = decrypt(productNFC);
+    productQR = decrypt(productQR);
+  } catch (error) {
+    throw new CustomError("Product does not exist", 400);
+  }
+  if (role !== 1)
+    throw new CustomError(
+      "Sell/Resell/Return actions can only be performed by sellers",
+      400
+    );
+  buyer = hmacSha(buyer);
   if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Product cannot be returned here", 400);
-  await contractInstance.methods.returnProduct(contractAddress, buyer).send({
+
+  await contractInstance.methods.returnProduct(productQR, buyer).send({
     from: sellerAddress,
     gas: 3000000,
   });
@@ -337,60 +384,90 @@ const returnProduct = async (req, res) => {
 };
 
 const resellProduct = async (req, res) => {
-  let { productNFC, productQR, buyer, newBuyer } = req.body;
-  const { companyAddress: sellerAddress } = req.user;
-  productNFC = decrypt(productNFC);
-  productQR = decrypt(productQR);
-  buyer = encrypt(buyer);
-  newBuyer = encrypt(newBuyer);
+  let {
+    productNFC,
+    productQR,
+    buyer,
+    newBuyer,
+    latitude,
+    longitude,
+  } = req.body;
+  const { companyAddress: sellerAddress, role } = req.user;
+  try {
+    productNFC = decrypt(productNFC);
+    productQR = decrypt(productQR);
+  } catch (error) {
+    throw new CustomError("Product does not exist", 400);
+  }
+  if (role !== 1)
+    throw new CustomError(
+      "Sell/Resell/Return actions can only be performed by sellers",
+      400
+    );
+  buyer = hmacSha(buyer);
+  newBuyer = hmacSha(newBuyer);
   if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Product cannot be resold here", 400);
-  await contractInstance.resellProduct(contractAddress, buyer, newBuyer).send({
-    from: sellerAddress,
-    gas: 3000000,
-  });
+  await contractInstance.methods
+    .resellProduct(productQR, buyer, newBuyer)
+    .send({
+      from: sellerAddress,
+      gas: 3000000,
+    });
   res.status(200).json({ message: "Successfully transferred property" });
 };
 
 const sellProduct = async (req, res) => {
-  let { productNFC, productQR, buyer } = req.body;
-  const { companyAddress: sellerAddress } = req.user;
-  productNFC = decrypt(productNFC);
-  productQR = decrypt(productQR);
-  buyer = encrypt(buyer);
+  let { productNFC, productQR, buyer, latitude, longitude } = req.body;
+  const { companyAddress: sellerAddress, role } = req.user;
+  try {
+    productNFC = decrypt(productNFC);
+    productQR = decrypt(productQR);
+  } catch (error) {
+    throw new CustomError("Product does not exist", 400);
+  }
+  if (role !== 1)
+    throw new CustomError(
+      "Sell/Resell/Return actions can only be performed by sellers",
+      400
+    );
+  buyer = hmacSha(buyer);
   if (!accounts.includes(sellerAddress.toLowerCase()))
     throw new CustomError("Product cannot be sold here", 400);
-  await contractInstance.sellProduct(contractAddress, buyer).send({
+  await contractInstance.methods.sellProduct(productQR, buyer).send({
     from: sellerAddress,
     gas: 3000000,
   });
-  res.status(200).json({ message: "Successfully effectuated transaction" });
+  res.status(200).json({ message: "Congrats! You just acquired this item." });
 };
 
 const transferProduct = async (req, res) => {
   let { destinationAddress, productAddress, latitude, longitude } = req.body;
-  productAddress = decrypt(productAddress);
+  if (
+    !productAddress.includes(":") ||
+    productAddress.split(":")[0].length < 15
+  ) {
+    throw new CustomError("Product does not exist", 400);
+  }
+  try {
+    productAddress = decrypt(productAddress);
+  } catch (error) {
+    throw new CustomError("Product does not exist", 400);
+  }
   const { companyAddress: senderAddress } = req.user;
   if (typeof latitude !== "string") latitude = latitude.toString();
   if (typeof longitude !== "string") longitude = longitude.toString();
-  if (
-    isNaN(latitude) ||
-    isNaN(longitude) ||
-    parseFloat(latitude) < -90 ||
-    parseFloat(latitude) > 90 ||
-    parseFloat(longitude) < -180 ||
-    parseFloat(longitude) > 180
-  ) {
+  if (verifyLocation(latitude, longitude)) {
     throw new CustomError(
       "Invalid location details, please check that location is active and permissions are granted to the app",
       400
     );
   }
-  if (
-    !accounts.includes(senderAddress.toLowerCase()) ||
-    !accounts.includes(destinationAddress.toLowerCase())
-  )
-    throw new CustomError("Transit party does not exist", 400);
+  if (!accounts.includes(senderAddress.toLowerCase()))
+    throw new CustomError("Invalid account used for transfer", 400);
+  const foundUser = await findAccountExists(destinationAddress);
+  if (!foundUser)
+    throw new CustomError("Transit party does not exist in the system", 400);
   const contract = await contractInstance.getPastEvents("ProductEvent", {
     filter: { productContractAddress: [productAddress] },
     fromBlock: 0,
@@ -398,7 +475,9 @@ const transferProduct = async (req, res) => {
   });
   if (contract.length < 1) throw new CustomError("Product does not exist", 400);
   const { productId, productName } = contract[0].returnValues;
-  const currentDate = new Date().toISOString();
+  const dateAdded = new Date();
+  let currentDate =
+    dateAdded.toLocaleDateString() + " at " + dateAdded.toLocaleTimeString();
   const response = await contractInstance.methods
     .transferProduct(
       destinationAddress,
@@ -423,32 +502,103 @@ const transferProduct = async (req, res) => {
 
 // GET
 app.use("/hello", passwordHashing);
-app.get("/accounts", authMiddleware, exceptionHandler(getAccounts));
 app.get("/product-details", exceptionHandler(getProductDetails));
-app.get("/all-products", authMiddleware, exceptionHandler(getAllProducts));
-app.get("/product-owner", exceptionHandler(getProductCurrentOwner));
+app.get("/all-products", [authMiddleware], exceptionHandler(getAllProducts));
+app.get(
+  "/product-owner",
+  [authMiddleware, middlewareExceptionHandler(prepareNode)],
+  exceptionHandler(getProductCurrentOwner)
+);
 app.get("/branches", authMiddleware, exceptionHandler(getCompanyBranches));
 // POST
-app.post("/add-user", authMiddleware, exceptionHandler(createUser));
-app.post("/product-details", authMiddleware, exceptionHandler(getProductById));
+app.post(
+  "/add-user",
+  [authMiddleware, middlewareExceptionHandler(prepareNode)],
+  exceptionHandler(createUser)
+);
+app.post(
+  "/product-details",
+  [authMiddleware, middlewareExceptionHandler(prepareNode)],
+  exceptionHandler(getProductById)
+);
 app.post("/login", exceptionHandler(login));
 app.post(
   "/add-contract",
-  authMiddleware,
+  [
+    check("productName", "product name must be provided").exists(),
+    check("latitude", "location latitude must be provided").exists(),
+    check("longitude", "location longitude must be provided").exists(),
+    check("x-auth-token", "an authorization token must be provided").exists(),
+    errorCheckerMiddleware,
+    authMiddleware,
+    middlewareExceptionHandler(prepareNode),
+  ],
   exceptionHandler(createProductContract)
 );
 app.post(
   "/transfer-product",
-  authMiddleware,
+  [authMiddleware, middlewareExceptionHandler(prepareNode)],
   exceptionHandler(transferProduct)
 );
-app.post("/return-product", authMiddleware, exceptionHandler(returnProduct));
-app.post("/resell-product", authMiddleware, exceptionHandler(resellProduct));
-app.post("/sell-product", authMiddleware, exceptionHandler(sellProduct));
 app.post(
-  "/edit-product",
-  authMiddleware,
-  exceptionHandler(changeProductDetails)
+  "/return-product",
+  [
+    check("productQR", "A valid QR code must be provided")
+      .exists()
+      .isLength({ min: 30 }),
+    check("productNFC", "A valid NFC scan result must be provided")
+      .exists()
+      .isLength({ min: 30 }),
+    check("buyer", "A buyer secure memorable code must be provided")
+      .exists()
+      .isLength({ min: 8 }),
+    check("x-auth-token", "an authorization token must be provided").exists(),
+    errorCheckerMiddleware,
+    authMiddleware,
+    middlewareExceptionHandler(prepareNode),
+  ],
+  exceptionHandler(returnProduct)
+);
+app.post(
+  "/resell-product",
+  [
+    check("productQR", "A valid QR code must be provided")
+      .exists()
+      .isLength({ min: 30 }),
+    check("productNFC", "A valid NFC scan result must be provided")
+      .exists()
+      .isLength({ min: 30 }),
+    check("buyer", "A buyer secure memorable code must be provided")
+      .exists()
+      .isLength({ min: 8 }),
+    check("newBuyer", "A new memorable code for new owner must be provided")
+      .exists()
+      .isLength({ min: 8 }),
+    check("x-auth-token", "an authorization token must be provided").exists(),
+    errorCheckerMiddleware,
+    authMiddleware,
+    middlewareExceptionHandler(prepareNode),
+  ],
+  exceptionHandler(resellProduct)
+);
+app.post(
+  "/sell-product",
+  [
+    check("productQR", "A QR code must be provided")
+      .exists()
+      .isLength({ min: 30 }),
+    check("productNFC", "An NFC scan result must be provided")
+      .exists()
+      .isLength({ min: 30 }),
+    check("buyer", "A buyer memorable code must be provided")
+      .exists()
+      .isLength({ min: 8 }),
+    check("x-auth-token", "an authorization token must be provided").exists(),
+    errorCheckerMiddleware,
+    authMiddleware,
+    middlewareExceptionHandler(prepareNode),
+  ],
+  exceptionHandler(sellProduct)
 );
 
 // Handling pages not found
@@ -461,6 +611,7 @@ app.use((err, req, res, next) => {
   console.log(err.stack);
   if (err.message.includes("revert")) {
     err.message = err.message.split("revert ")[1];
+    err.statusCode = 400;
   }
   if (err.message.includes("invalid string value ")) {
     let str = err.message.split("_")[1];
@@ -474,3 +625,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => console.log(`NodeJS API is listening on port ${PORT}`));
+
+module.exports = { app };

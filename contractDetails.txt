@@ -1,6 +1,16 @@
 
 Roles { 0 = manufacturer, 2 = distributor, 1 = seller}
 
+// test network product 1
+// address 0xb15032606166e0620832Ee92ad79662ef7F80063 =>
+// 3b38cc0a9cc8cdde0b05b76ae8251622:ac900db1b1f77308a65eea5b5ccc2b892dd18205895a13c2e352db74a4814f7b0664557f922ef0e57be82589207218e1
+// id 1 => 79abcf492c6571281386fb0c9d7cbba1:f6f686c2097264e25b2c2ecbb2a0fbe2
+
+// deployed with account on node01, contract address = 0x7CB24dfF5FDbB1db1BcCE333bA83E01a3Bbf2ef1
+
+rinkeby address contract = 0x525A3fC122A9048Bae1693Deb25B73aB49306742
+local address dell = 0x195F90Db9c8574189CCf8819bB67feE6B502f43F
+
 Ganache Linux Mint => {
     ProvenanceContracts {
     Man1 - Distrib2 - Distrib1 - Sel1 => 0x000000000000000000000000b78728350da4bf2cc308ab081eb8eea3a3be34d4
@@ -37,7 +47,8 @@ commands => {
     let con = await TrackerContract.deployed()
     let accounts = await web3.eth.getAccounts()
     let r = await con.createProvenanceContract("0x5a6C3F0d9802a039f3175E5bd0a7027538561Cfc", "nike shoes", {from: accounts[1]})
-    let user = await con.addUser("accountAddress", "name", "password", "role")
+    let user = await con.addUser("accountAddress", "name", "role")
+    let user = await con.addUser("0x101143F5B3b4723e8f3E7C32d95a7d4D8E8BAfb3", "Nike", "$2a$10$s9dv0fK0J0iQg44WySWtyuSjIynfXeknV7nOXSNJHVqLb6RXlx28O", "manufacturer", "2020-05-08T12:33:29.954Z")
     const newBranch = await con.addBranch("branchName", "latitude", "longitude", {from: ""})
     let {addUsers, addBranches} = require("./commands.js")
     let res = await addUsers(con)
