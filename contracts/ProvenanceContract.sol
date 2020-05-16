@@ -69,6 +69,10 @@ contract ProvenanceContract {
         return currentHolder;
     }
 
+    function getSeller() public view returns (address) {
+        return seller;
+    }
+
     function getProductState() public view returns (uint) {
         if(State == StateType.Created) {
             return 0;

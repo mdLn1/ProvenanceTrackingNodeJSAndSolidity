@@ -6,7 +6,7 @@ Roles { 0 = manufacturer, 2 = distributor, 1 = seller}
 // 3b38cc0a9cc8cdde0b05b76ae8251622:ac900db1b1f77308a65eea5b5ccc2b892dd18205895a13c2e352db74a4814f7b0664557f922ef0e57be82589207218e1
 // id 1 => 79abcf492c6571281386fb0c9d7cbba1:f6f686c2097264e25b2c2ecbb2a0fbe2
 
-// deployed with account on node01, contract address = 0x7CB24dfF5FDbB1db1BcCE333bA83E01a3Bbf2ef1
+// deployed with account on node01, contract address = 0xc9965e8B990F5e7E48b32B8aBbE912A05B6c9678
 
 rinkeby address contract = 0x525A3fC122A9048Bae1693Deb25B73aB49306742
 local address dell = 0x195F90Db9c8574189CCf8819bB67feE6B502f43F

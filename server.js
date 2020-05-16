@@ -13,22 +13,24 @@ const middlewareExceptionHandler = require("./utils/middlewareExceptionHandler")
 const errorCheckerMiddleware = require("./middleware/errorCheckerMiddleware");
 const jwt = require("jsonwebtoken");
 const config = require("config");
+const { test, production } = require("./testingDetails.json");
 const { encrypt, decrypt, saltHash, hmacSha } = require("./utils/encryption");
 //setting up environment
-if (process.env.NODE_ENV === "test") {
-  process.env.LOCAL_NODE = "http://127.0.0.1:10545";
-}
 var web3 =
-  process.env.NODE_ENV === "production"
-    ? new Web3(process.env.REMOTE_NODE)
-    : new Web3(process.env.LOCAL_NODE);
+  process.env.NODE_ENV === "test"
+    ? new Web3(test.nodeAddresses[0])
+    : new Web3(production.nodeAddresses[0]);
 
 const PORT = process.env.PORT || 5000;
 
-const abi = JSON.parse(
-  '[{"inputs": [{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_role","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "constructor"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "transferredTo","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateTransferred","type": "string"},{"indexed": false,"internalType": "uint256","name": "productState","type": "uint256"}],"name": "TransitEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "productContractAddress","type": "address"},{"indexed": true,"internalType": "address","name": "manufacturerAddress","type": "address"},{"indexed": true,"internalType": "uint256","name": "productId","type": "uint256"},{"indexed": false,"internalType": "string","name": "manufacturerName","type": "string"},{"indexed": false,"internalType": "string","name": "productName","type": "string"},{"indexed": false,"internalType": "string","name": "linkToMerch","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "ProductEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "companyAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "branchName","type": "string"},{"indexed": false,"internalType": "string","name": "latitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "longitudeLocation","type": "string"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "BranchEvent","type": "event"},{"anonymous": false,"inputs": [{"indexed": true,"internalType": "address","name": "userAddress","type": "address"},{"indexed": false,"internalType": "string","name": "companyName","type": "string"},{"indexed": false,"internalType": "string","name": "role","type": "string"},{"indexed": false,"internalType": "bool","name": "companyDisabled","type": "bool"},{"indexed": false,"internalType": "string","name": "dateAdded","type": "string"}],"name": "UserEvent","type": "event"},{"constant": false,"inputs": [{"internalType": "address","name": "_seller","type": "address"},{"internalType": "string","name": "_productName","type": "string"},{"internalType": "string","name": "_linkToMerch","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "createProvenanceContract","outputs": [{"internalType": "uint256","name": "newProductId","type": "uint256"},{"internalType": "string","name": "company","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_accountAddress","type": "address"},{"internalType": "string","name": "_name","type": "string"},{"internalType": "string","name": "_role","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addUser","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "string","name": "_branchName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateAdded","type": "string"}],"name": "addBranch","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_newParty","type": "address"},{"internalType": "address","name": "_contract","type": "address"},{"internalType": "uint256","name": "_productId","type": "uint256"},{"internalType": "string","name": "productName","type": "string"},{"internalType": "string","name": "_latitudeLocation","type": "string"},{"internalType": "string","name": "_longitudeLocation","type": "string"},{"internalType": "string","name": "_dateTransferred","type": "string"}],"name": "transferProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "returnProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"},{"internalType": "string","name": "_newBuyer","type": "string"}],"name": "resellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"internalType": "address","name": "_contract","type": "address"},{"internalType": "string","name": "_buyer","type": "string"}],"name": "sellProduct","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductCurrentOwner","outputs": [{"internalType": "address","name": "","type": "address"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": true,"inputs": [{"internalType": "address","name": "_contract","type": "address"}],"name": "getProductState","outputs": [{"internalType": "uint256","name": "","type": "uint256"}],"payable": false,"stateMutability": "view","type": "function"}]'
+const { abi } = require("./build/contracts/TrackerContract.json");
+
+var contractInstance = new web3.eth.Contract(
+  abi,
+  process.env.NODE_ENV === "production"
+    ? production.contractAddress
+    : test.contractAddress
 );
-var contractInstance = new web3.eth.Contract(abi, process.env.CONTRACT_ADDRESS);
 // const account = web3.eth.accounts.privateKeyToAccount(
 //   "0x43f3ab15b4ce3914e8a292c0781db8c71901a6a939f91704ee0cbc53ce382d75"
 // );
@@ -45,20 +47,6 @@ app.use(express.urlencoded({ extended: false }));
 
 // API functions
 
-const passwordHashing = async (req, res) => {
-  let hashed = [];
-  let passwords = ["password", "password", "password"];
-  console.log("Output: ");
-  hashed = await Promise.all(
-    passwords.map(async (el) => {
-      const hash = await saltHash(el);
-      console.log(hash);
-      return hash;
-    })
-  );
-  res.status(200).json({ hashedPasswords: hashed });
-};
-
 const verifyLocation = (latitude, longitude) => {
   return (
     isNaN(latitude) ||
@@ -70,7 +58,7 @@ const verifyLocation = (latitude, longitude) => {
   );
 };
 
-const test = async (req, res) => {
+const testCall = async (req, res) => {
   const contract = await contractInstance.getPastEvents("UserEvent", {
     fromBlock: 0,
     toBlock: "latest",
@@ -78,21 +66,29 @@ const test = async (req, res) => {
   return res.status(200).json(contract);
 };
 
-app.use("/test", exceptionHandler(test));
+app.use("/test", exceptionHandler(testCall));
 
 const prepareNode = async (req, res, next) => {
   const { nodeAddress, companyAddress, password } = req.user;
+  web3 = new Web3(new Web3.providers.HttpProvider(nodeAddress));
+  contractInstance = new web3.eth.Contract(
+    abi,
+    process.env.NODE_ENV === "production"
+      ? production.contractAddress
+      : test.contractAddress
+  );
+  accounts = await promisify(web3.eth.getAccounts);
+  accounts = accounts.map((el) => el.toLowerCase());
   if (process.env.NODE_ENV === "production") {
-    web3 = new Web3(new Web3.providers.HttpProvider(nodeAddress));
     const res = await web3.eth.personal.unlockAccount(
       companyAddress,
       password,
-      10000
+      100000
     );
     web3.eth.defaultAccount = companyAddress;
+  } else {
+    web3.eth.defaultAccount = accounts[0];
   }
-  accounts = await promisify(web3.eth.getAccounts);
-  accounts = accounts.map((el) => el.toLowerCase());
   next();
 };
 
@@ -174,8 +170,6 @@ const createProductContract = async (req, res) => {
   const dateAdded = new Date();
   let currentDate =
     dateAdded.toLocaleDateString() + " at " + dateAdded.toLocaleTimeString();
-  accounts = await promisify(web3.eth.getAccounts);
-  contractInstance = new web3.eth.Contract(abi, process.env.CONTRACT_ADDRESS);
   const resp = await contractInstance.methods
     .createProvenanceContract(
       sellerAddress,
@@ -219,19 +213,20 @@ const getAllProducts = async (req, res) => {
 };
 
 const getProductCurrentOwner = async (req, res) => {
-  const { product: productAddress } = req.body;
-  let transits = await contractInstance.getPastEvents("TransitEvent", {
-    filter: { productId: [productId] },
+  let { product: productAddress } = req.query;
+  productAddress = decrypt(productAddress);
+  let products = await contractInstance.getPastEvents("ProductEvent", {
+    filter: { productContractAddress: [productAddress] },
     fromBlock: 0,
     toBlock: "latest",
   });
-  if (transits.length == 0) {
+  if (products.length == 0) {
     throw new CustomError("Product does not exist in our records", 400);
   }
   const ownerAddress = await contractInstance.methods
     .getProductCurrentOwner(productAddress)
-    .send({
-      from: senderAddress,
+    .call({
+      from: req.user.companyAddress,
       gas: 3000000,
     });
   const [
@@ -244,6 +239,35 @@ const getProductCurrentOwner = async (req, res) => {
     toBlock: "latest",
   });
   res.status(200).json({ owner: companyName });
+};
+
+const getProductSeller = async (req, res) => {
+  let { product: productAddress } = req.query;
+  productAddress = decrypt(productAddress);
+  let products = await contractInstance.getPastEvents("ProductEvent", {
+    filter: { productContractAddress: [productAddress] },
+    fromBlock: 0,
+    toBlock: "latest",
+  });
+  if (products.length == 0) {
+    throw new CustomError("Product does not exist in our records", 400);
+  }
+  const sellerAddress = await contractInstance.methods
+    .getProductSeller(productAddress)
+    .call({
+      from: req.user.companyAddress,
+      gas: 3000000,
+    });
+  const [
+    {
+      returnValues: { companyName },
+    },
+  ] = await contractInstance.getPastEvents("UserEvent", {
+    filter: { userAddress: [sellerAddress] },
+    fromBlock: 0,
+    toBlock: "latest",
+  });
+  res.status(200).json({ seller: companyName });
 };
 
 const getProductById = async (req, res) => {
@@ -314,11 +338,19 @@ const getCompanyBranches = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { username, password, nodeAddress } = req.body;
-  web3.eth.Contract.defaultAccount =
-    process.env.NODE_ENV !== "production"
-      ? "0xbEEBc172694c0f55eC41Efb36f1a85aEcE3C46E2" // test truffle first account
-      : "0xACdACF1B0E8F27a5A1167Bead1f7539cf7B23ae4";
+  let { username, password, nodeAddress } = req.body;
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    !production.nodeAddresses.includes(nodeAddress)
+  )
+    throw new CustomError("The node address entered is invalid", 400);
+  else nodeAddress = test.nodeAddresses[0];
+
+  if (process.env.NODE_ENV === "test")
+    web3.eth.Contract.defaultAccount =
+      "0xbEEBc172694c0f55eC41Efb36f1a85aEcE3C46E2";
+
   let resp, unlockSuccess;
   // if (process.env.NODE_ENV === "production") {
   //   unlockSuccess = await web3.eth.personal.unlockAccount(
@@ -501,13 +533,17 @@ const transferProduct = async (req, res) => {
 // api paths
 
 // GET
-app.use("/hello", passwordHashing);
 app.get("/product-details", exceptionHandler(getProductDetails));
 app.get("/all-products", [authMiddleware], exceptionHandler(getAllProducts));
 app.get(
   "/product-owner",
   [authMiddleware, middlewareExceptionHandler(prepareNode)],
   exceptionHandler(getProductCurrentOwner)
+);
+app.get(
+  "/product-seller",
+  [authMiddleware, middlewareExceptionHandler(prepareNode)],
+  exceptionHandler(getProductSeller)
 );
 app.get("/branches", authMiddleware, exceptionHandler(getCompanyBranches));
 // POST

@@ -236,6 +236,13 @@ contract TrackerContract {
         return ProvenanceContract(_contract).getCurrentOwner();
     }
 
+    function getProductSeller(address _contract) public
+        view
+        returns (address)
+    {
+        return ProvenanceContract(_contract).getSeller();
+    }
+
     function getProductState(address _contract) public view returns(uint){
         return ProvenanceContract(_contract).getProductState();
     }

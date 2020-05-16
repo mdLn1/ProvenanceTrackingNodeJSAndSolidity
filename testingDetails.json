@@ -1,0 +1,23 @@
+{
+    "test": {
+        "contractAddress": "0xE9615f948c1266DAbc72c179F12824968F876bDC",
+        "productAddress": "",
+        "productId": 1,
+        "nodeAddresses": [
+            "http://127.0.0.1:10545"
+        ]
+    },
+    "production": {
+        "contractAddress": "0xFdaEa81f9997d2ee0B26890E7B5626E712f77936",
+        "productAddress": "",
+        "productId": 1,
+        "nodeAddresses": [
+            "http://127.0.0.1:8001",
+            "http://127.0.0.1:8002",
+            "http://127.0.0.1:8003",
+            "http://127.0.0.1:8004",
+            "http://127.0.0.1:8005",
+            "http://127.0.0.1:8006"
+        ]
+    }
+}

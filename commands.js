@@ -1,6 +1,6 @@
 // let user = await con.addUser("accountAddress", "name", "password", "role")
 // roles: manufacturer, distributor, seller
-const parsedJSON = require("./buildDataProd.json");
+const parsedJSON = require("./buildDataTest.json");
 
 const dateAdded = new Date();
 let stringDate =
@@ -8,10 +8,7 @@ let stringDate =
 async function addUsers(con) {
   const all = await Promise.all(
     parsedJSON.map(async (el) => {
-      const user = await con.addUser(
-        ...el,
-        stringDate
-      );
+      const user = await con.addUser(...el, stringDate);
       return user;
     })
   );
