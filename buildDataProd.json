@@ -1,6 +1,6 @@
 [
     [
-        "0xde9C6498Cb767Cf28bA549A5f2BF324d8E8dEC2B",
+        "0xE1a7a7c35f4f75b3E5c75BbbecB1e7deF6dccBA5",
         "Nike",
         "manufacturer"
     ],
@@ -20,12 +20,12 @@
         "seller"
     ],
     [
-        "0xE1a7a7c35f4f75b3E5c75BbbecB1e7deF6dccBA5",
+        "0x5c4b8B83c383a0786ae5931ff0A76C1c9f27e212",
         "Amazon",
         "distributor"
     ],
     [
-        "0x5c4b8B83c383a0786ae5931ff0A76C1c9f27e212",
+        "0x45D23dc097fbA363090A03403D485e36AbBEADE9",
         "DPD",
         "distributor"
     ]

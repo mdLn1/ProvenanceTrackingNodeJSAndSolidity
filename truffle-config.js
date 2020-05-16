@@ -11,7 +11,7 @@ module.exports = {
       port: 7545,
     },
     nodeone: {
-      host: "51.141.225.59", // Localhost (default: none)
+      host: "51.11.128.110", // Localhost (default: none)
       port: 8001, // Standard Ethereum port (default: none)
       network_id: "5511", // Any network (default: none)
     },

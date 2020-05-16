@@ -45,6 +45,14 @@ const roles = ["manufacturer", "seller", "distributor"];
 app.use(express.json({ extended: false }));
 app.use(express.urlencoded({ extended: false }));
 
+// only android devices can make requests to the API
+// app.use((req, res, next) => {
+//   if (!req.rawHeaders.find((el) => el.includes("Android"))) {
+//     throw new CustomError("Invalid request source");
+//   }
+//   next();
+// });
+
 // API functions
 
 const verifyLocation = (latitude, longitude) => {
@@ -293,7 +301,6 @@ const getProductById = async (req, res) => {
     transits: transits.map((el) => el.returnValues),
   });
 };
-
 const getProductDetails = async (req, res) => {
   let { product: productAddress } = req.query;
   if (
@@ -340,12 +347,10 @@ const getCompanyBranches = async (req, res) => {
 const login = async (req, res) => {
   let { username, password, nodeAddress } = req.body;
 
-  if (
-    process.env.NODE_ENV === "production" &&
-    !production.nodeAddresses.includes(nodeAddress)
-  )
-    throw new CustomError("The node address entered is invalid", 400);
-  else nodeAddress = test.nodeAddresses[0];
+  if (process.env.NODE_ENV === "production") {
+    if (!production.nodeAddresses.includes(nodeAddress))
+      throw new CustomError("The node address entered is invalid", 400);
+  } else nodeAddress = test.nodeAddresses[0];
 
   if (process.env.NODE_ENV === "test")
     web3.eth.Contract.defaultAccount =

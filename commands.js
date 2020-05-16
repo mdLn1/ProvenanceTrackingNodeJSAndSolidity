@@ -1,6 +1,6 @@
 // let user = await con.addUser("accountAddress", "name", "password", "role")
 // roles: manufacturer, distributor, seller
-const parsedJSON = require("./buildDataTest.json");
+const parsedJSON = require("./buildDataProd.json");
 
 const dateAdded = new Date();
 let stringDate =

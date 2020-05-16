@@ -1,31 +1,31 @@
 [
     [
-        "0x0089197926f033879C30658504FbE0AF27cf0478",
+        "0x02663Fb524247d01DA8B7258CC34516446dC4171",
         "Nike",
         "manufacturer"
     ],
     [
-        "0x2Ec27913786197C85e9AC38Fa313b4008a4F2281",
+        "0xBd76eD91E3C06cf2c2188973Cd36Ef9A661a9986",
         "Adidas",
         "manufacturer"
     ],
     [
-        "0xc28832fA1C02037A81bb5D543Ee4d1fae95dcbf4",
+        "0x464000e9Aba52533Ef3ebdd2223a2a74f319D665",
         "Tesco",
         "seller"
     ],
     [
-        "0x2C8A0a5DdE80eD7958b7A2710aad196d3d22fFCE",
+        "0xD82d6f278c01De382F4f768C15C14138C81Ed33d",
         "Sainsbury's",
         "seller"
     ],
     [
-        "0x5447246e41947A772fCFE26ED554fBa5F196BCB9",
+        "0x09C5Adf76Cf8d07235D2C8e731BDd64376667EB3",
         "Amazon",
         "distributor"
     ],
     [
-        "0x9Ae2BfEf9C87352Ff9fE2F0E24ade3f2C8938820",
+        "0x0811A676a2eb9BAFEA22473EC0893B173737953A",
         "DPD",
         "distributor"
     ]

@@ -1,6 +1,6 @@
 {
     "test": {
-        "contractAddress": "0xE9615f948c1266DAbc72c179F12824968F876bDC",
+        "contractAddress": "0xc2D24b35e444A0fdF729AF364eFf1681ce027e53",
         "productAddress": "",
         "productId": 1,
         "nodeAddresses": [
@@ -8,16 +8,17 @@
         ]
     },
     "production": {
-        "contractAddress": "0xFdaEa81f9997d2ee0B26890E7B5626E712f77936",
+        "contractAddress": "0xD6d5C8AdC7AEBac95e0a27D3acD5eD5EcffD1443",
         "productAddress": "",
         "productId": 1,
         "nodeAddresses": [
-            "http://127.0.0.1:8001",
-            "http://127.0.0.1:8002",
-            "http://127.0.0.1:8003",
-            "http://127.0.0.1:8004",
-            "http://127.0.0.1:8005",
-            "http://127.0.0.1:8006"
+            "http://51.11.128.110:8001",
+            "http://51.11.128.110:8002",
+            "http://51.11.128.110:8003",
+            "http://51.11.128.110:8004",
+            "http://51.11.128.110:8005",
+            "http://51.11.128.110:8006",
+            "http://51.11.128.110:8007"
         ]
     }
 }
