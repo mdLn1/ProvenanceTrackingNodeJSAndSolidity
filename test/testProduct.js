@@ -2,9 +2,9 @@ const expect = require("expect");
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
 const config = require("config");
-
+const { encrypt } = require("../utils/encryption");
 const { app } = require("../server");
-const manufacturerToken = jwt.sign(
+let manufacturerToken = jwt.sign(
   {
     user: {
       companyAddress: "0x0089197926f033879C30658504FbE0AF27cf0478",
@@ -16,7 +16,7 @@ const manufacturerToken = jwt.sign(
     expiresIn: 60000,
   }
 );
-const distributorToken = jwt.sign(
+let distributorToken = jwt.sign(
   {
     user: {
       companyAddress: "0x5447246e41947A772fCFE26ED554fBa5F196BCB9",
@@ -28,7 +28,7 @@ const distributorToken = jwt.sign(
     expiresIn: 60000,
   }
 );
-const sellerToken = jwt.sign(
+let sellerToken = jwt.sign(
   {
     user: {
       companyAddress: "0xc28832fA1C02037A81bb5D543Ee4d1fae95dcbf4",
@@ -40,6 +40,10 @@ const sellerToken = jwt.sign(
     expiresIn: 60000,
   }
 );
+
+manufacturerToken = encrypt(manufacturerToken);
+sellerToken = encrypt(sellerToken);
+distributorToken = encrypt(distributorToken);
 
 // Create Product Provenance contract
 describe("POST /add-contract/", () => {
@@ -161,7 +165,9 @@ describe("POST /add-contract/", () => {
 describe("POST /product-details/", () => {
   it("existing product, it should return its details", (done) => {
     request(app)
-      .get("/product-details/?product=c592a18d5c0a80b155a522248c8e1dd4:36788fa416fc90b6f4466537f698513b1dd73db8d3939bf7140c1bb788c43737eac5f718ffb8cdb1b5fa4ed2f98cd4a8")
+      .get(
+        "/product-details/?product=c592a18d5c0a80b155a522248c8e1dd4:36788fa416fc90b6f4466537f698513b1dd73db8d3939bf7140c1bb788c43737eac5f718ffb8cdb1b5fa4ed2f98cd4a8"
+      )
       .send({})
       .expect(200)
       .expect((res) => {

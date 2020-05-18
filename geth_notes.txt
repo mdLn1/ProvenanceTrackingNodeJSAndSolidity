@@ -68,7 +68,7 @@ ethash PoW = {
 
 
 
-clique.propose("0x43376ADFd96D1AA7A7dD95533b8182FBeb93e1B0", true)
+clique.propose("0x7F6aACC5c1f566AE0ECB3aD5869E4dA3d44f2d33", true)
 geth --identity "node01" --rpc --rpcport "8501" --rpccorsdomain "*" --datadir node1/ --port 30311 --rpc --rpcaddr 'localhost' --rpcapi 'personal,db,eth,net,web3,txpool,miner' --bootnodes 'enode://cbe806e594ed684497cf85570850bb41f9dffbd1600f1e29b5450b4ff0efb9e152ab9fb4781c9bbf2f84f29fb15ffdd6ae756a4a910594254bd1e006fb547468@127.0.0.1:0?discport=30310' --networkid 15151 --gasprice '1' -unlock '0x1845A3F5f1795682aA2fcA1b3085115DE1bAdc37' --password node1/password.txt --mine --allow-insecure-unlock --ipcdisable
 geth  --identity "node02" --datadir node2/ --syncmode 'full' --port 30312 --rpc --rpcaddr 'localhost' --rpcport 8502 --rpcapi 'personal,db,eth,net,web3,txpool,miner' --bootnodes 'enode://cbe806e594ed684497cf85570850bb41f9dffbd1600f1e29b5450b4ff0efb9e152ab9fb4781c9bbf2f84f29fb15ffdd6ae756a4a910594254bd1e006fb547468@127.0.0.1:0?discport=30310' --networkid 15151 --gasprice '1' -unlock 'BE45B6387BCdb9AA558E105826Dba55fFA2d1aA0' --password node2/password.txt --mine --allow-insecure-unlock --ipcdisable
 
@@ -84,10 +84,10 @@ geth --identity "node03" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner
 geth --identity "node04" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8004" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node04/" --port "30314" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x498d9c26a7554E74Dd85128Eb8F1e82230c190bC' --password node04/password.txt --mine --ethstats node04:mdln97@localhost:3000
 geth --identity "node05" --cache=1024 --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8005" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node05/" --port "30315" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0xfed271F1b5933FC3fe4f52Ba05F7289199F9d1c3' --password node05/password.txt --mine --ethstats node05:mdln97@localhost:3000
 geth --identity "node06" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8006" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node06/" --port "30316" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x5c4b8B83c383a0786ae5931ff0A76C1c9f27e212' --password node06/password.txt --mine --ethstats node06:mdln97@localhost:3000
-geth --identity "node07" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8007" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node07/" --port "30317" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x45D23dc097fbA363090A03403D485e36AbBEADE9' --password node06/password.txt --mine --ethstats node06:mdln97@localhost:3000
-geth --identity "node08" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8008" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node08/" --port "30318" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x7F6aACC5c1f566AE0ECB3aD5869E4dA3d44f2d33' --password node06/password.txt --mine --ethstats node06:mdln97@localhost:3000
-geth --identity "node09" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8009" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node09/" --port "30319" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x0CaF35dB3f941Eb154C4C50F87bb2fFcB2b8492d' --password node06/password.txt --mine --ethstats node06:mdln97@localhost:3000
-geth --identity "node10" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8010" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node10/" --port "30320" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x43376ADFd96D1AA7A7dD95533b8182FBeb93e1B0' --password node06/password.txt --mine --ethstats node06:mdln97@localhost:3000
+geth --identity "node07" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8007" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node07/" --port "30317" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x45D23dc097fbA363090A03403D485e36AbBEADE9' --password node06/password.txt --mine --ethstats node07:mdln97@localhost:3000
+geth --identity "node08" --cache=1024 --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8008" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node08/" --port "30318" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x7F6aACC5c1f566AE0ECB3aD5869E4dA3d44f2d33' --password node06/password.txt --mine --ethstats node08:mdln97@localhost:3000
+geth --identity "node09" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8009" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node09/" --port "30319" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x0CaF35dB3f941Eb154C4C50F87bb2fFcB2b8492d' --password node06/password.txt --mine --ethstats node09:mdln97@localhost:3000
+geth --identity "node10" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --rpc --rpcport "8010" --rpcaddr "0.0.0.0" --rpccorsdomain "*"  --datadir "node10/" --port "30320" --bootnodes "enode://8b204a8177e8ef698fee9e522c0ab2468a15c0da01db48a5441d30454e2b96d3feb8377fc6783c2a6414dcd38cf5452aa176ac5bb6ca9074d1beb41d5ad3a4b8@127.0.0.1:30310" --allow-insecure-unlock --networkid 5511 --nat "any" --gasprice '1' -unlock '0x43376ADFd96D1AA7A7dD95533b8182FBeb93e1B0' --password node06/password.txt --mine --ethstats node10:mdln97@localhost:3000
 
 PoW
 geth --identity "node01" --syncmode 'full' --rpcapi "eth,net,web3,personal,miner,admin" --minerthreads=1 --etherbase=0x850A51f2a16A8AA3b2248e7D42e2641f5ee8945e --rpc --rpcport "8001" --rpcaddr "0.0.0.0" --rpccorsdomain "*" --datadir "node01/" --port "30411" --bootnodes "enode://a45b4c4ff748291100db971555a79346dae4cfe653867408be8bfe2ea657538917e9f77a08d0bf8528c8eff587a23cbe899319989c5718d1896fb5a8144d349a@127.0.0.1:0?discport=30410" --allow-insecure-unlock  --networkid 5512 --nat "any" -unlock '0x850A51f2a16A8AA3b2248e7D42e2641f5ee8945e' --password node01/password.txt --mine --ethstats node01:mdln97@localhost:3000
@@ -126,12 +126,6 @@ Genesis File
 }
 
 
-geth --identity "node03" --rpc --rpcport "8002" --rpccorsdomain "*" --datadir "/home/sysadmin/node-03" --port "30305" --nodiscover --rpcapi "db,eth,net,web3,personal,miner,admin" --networkid 1900 --nat "any" --allow-insecure-unlock
---ethstats node01:Gabriel1@localhost:3000
-
-admin.addPeer("enode://e9a064001f2498eceda1b5b6097f994f0a11a5e946949c8914e424dc2ae93ba602b9abd2313654fc6f478acaaefe33bb1e3fe670444fcfafcd49cc63b9b8dcd0@127.0.0.1:30303?discport=0")
-
-
 
 $ geth --datadir "/PATH_TO_NODE01/" account new
 $ geth --datadir "/PATH_TO_NODE/" init /PATH_TO/genesis.json
@@ -140,39 +134,10 @@ $ geth --identity "node101 --rpc --rpcport "8000" --rpccorsdomain "*" --datadir 
 WS_SECRET=Gabriel1 npm start
 
 
-TO RUN NODE:
-geth --identity "node01" --rpc --rpcport "8000" --rpcaddr "0.0.0.0" --rpccorsdomain "*" --datadir "/home/sysadmin/PoW/node-01" --port "30303" --nodiscover --rpcapi "db,eth,net,web3,personal,miner,admin" --networkid 1900 --nat "any" --allow-insecure-unlock --ethstats node01:Gabriel1@localhost:3000
-
-geth --identity "node02" --rpc --rpcport "8001" --rpcaddr "0.0.0.0" --rpccorsdomain "*" --datadir "/home/sysadmin/PoW/node-02" --port "30304" --nodiscover --rpcapi "db,eth,net,web3,personal,miner,admin" --networkid 1900 --nat "any" --allow-insecure-unlock --ethstats node02:Gabriel1@localhost:3000
-
-geth --identity "node03" --rpc --rpcport "8002" --rpcaddr "0.0.0.0" --rpccorsdomain "*" --datadir "/home/sysadmin/PoW/node-03" --port "30305" --nodiscover --rpcapi "db,eth,net,web3,personal,miner,admin" --networkid 1900 --nat "any" --allow-insecure-unlock --ethstats node03:Gabriel1@localhost:3000
-
-Geth attacch http://ip:port
+Geth attach http://ip:port
 
 admin.addPeer("enode://e9a064001f2498eceda1b5b6097f994f0a11a5e946949c8914e424dc2ae93ba602b9abd2313654fc6f478acaaefe33bb1e3fe670444fcfafcd49cc63b9b8dcd0@127.0.0.1:30303?discport=0")
 
-PoA Config
-Account1 on node01 -> Gabriel1!
-Public address of the key:   0x91459e4375C32Ac9a0Fd7b7c807e2BB1465f331f
-Path of the secret key file: node1/keystore/UTC--2020-01-10T15-53-02.838609818Z--91459e4375c32ac9a0fd7b7c807e2bb1465f331f
-
-Account2 on node01 -> Gabriel2!
-Public address of the key:   0x91c39BbD8e2278B732cE2375A12316994d359065
-Path of the secret key file: node1/keystore/UTC--2020-01-10T15-53-54.062429559Z--91c39bbd8e2278b732ce2375a12316994d359065
-
-Account3 on node02 -> Gabriel3!
-Public address of the key:   0x61389775545C189e1ee6761734bE377c0d5c01DE
-Path of the secret key file: node2/keystore/UTC--2020-01-10T15-54-56.324593247Z--61389775545c189e1ee6761734be377c0d5c01de
-
-Account4 on node03 -> Gabriel4!
-Public address of the key:   0x132Fc30Db70dAE54d941173a62C3e8EA5c362F7e
-Path of the secret key file: node2/keystore/UTC--2020-01-10T15-55-26.656826910Z--132fc30db70dae54d941173a62c3e8ea5c362f7e
-
 Create boot node:
 bootnode -genkey bootnode.key
-bootnode -nodekey bootnode.key -verbosity 9 -addr :30410
-
-Run node:
-geth --identity "node1" --rpc --rpcport "8100" --rpcaddr "0.0.0.0" --rpccorsdomain "*" --datadir "/home/sysadmin/PoA/node1" --port "30333" --nodiscover --rpcapi "db,eth,net,web3,personal,miner,admin" --networkid 1515 --nat "any" --gasprice '1' --targetgaslimit 4700000 --allow-insecure-unlock -unlock '0x91459e4375C32Ac9a0Fd7b7c807e2BB1465f331f' --password node1/password.txt --mine --ethstats node02:Gabriel1@localhost:3000
-
-geth --identity "node2" --rpc --rpcport "8101" --rpcaddr "0.0.0.0" --rpccorsdomain "*" --datadir "/home/sysadmin/PoA/node2" --port "30334" --nodiscover --rpcapi "db,eth,net,web3,personal,miner,admin" --networkid 1515 --nat "any" --gasprice '1' --targetgaslimit 4700000 --allow-insecure-unlock -unlock '0x61389775545C189e1ee6761734bE377c0d5c01DE' --password node2/password.txt --mine --ethstats node2:Gabriel1@localhost:3000
+    bootnode -nodekey bootnode.key -verbosity 9 -addr :30410

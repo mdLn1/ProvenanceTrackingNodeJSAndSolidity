@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const secretPassword = "jocDeNota10";
 const bcrypt = require("bcryptjs");
+
+// a key generated from secretPassword above
 const ENCRYPTION_KEY = crypto
   .createHash("sha256")
   .update(String(secretPassword))
@@ -21,6 +23,9 @@ const hmacSha = (data) => {
   return hmac.digest("hex");
 };
 
+// iv is a random generated buffer of length 16
+// the cipher is the algorithm that performs the encryption
+// encrypted variable contains the full content of the generated encrypted version of the original text
 function encrypt(text) {
   let iv = crypto.randomBytes(IV_LENGTH);
   let cipher = crypto.createCipheriv(
@@ -35,6 +40,7 @@ function encrypt(text) {
   return iv.toString("hex") + ":" + encrypted.toString("hex");
 }
 
+// reverses the process of encryption achieved above
 function decrypt(text) {
   let textParts = text.split(":");
   let iv = Buffer.from(textParts.shift(), "hex");
@@ -51,12 +57,14 @@ function decrypt(text) {
   return decrypted.toString();
 }
 
+// hashing with a salt a given text by using bcryptjs library
 async function saltHash(text) {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(text, salt);
   return hashedPassword;
 }
 
+// evaluating if a text could be computed to achieve the result obtained with the use of the function above
 async function compareSaltedHash(saltedHash, text) {
   return await bcrypt.compare(text, saltedHash);
 }

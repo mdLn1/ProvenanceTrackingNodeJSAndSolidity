@@ -15,6 +15,7 @@ const jwt = require("jsonwebtoken");
 const config = require("config");
 const { test, production } = require("./testingDetails.json");
 const { encrypt, decrypt, saltHash, hmacSha } = require("./utils/encryption");
+
 //setting up environment
 var web3 =
   process.env.NODE_ENV === "test"
@@ -55,6 +56,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // API functions
 
+// check if a location coordinates might be invalid
 const verifyLocation = (latitude, longitude) => {
   return (
     isNaN(latitude) ||
@@ -66,6 +68,7 @@ const verifyLocation = (latitude, longitude) => {
   );
 };
 
+// using test functions
 const testCall = async (req, res) => {
   const contract = await contractInstance.getPastEvents("UserEvent", {
     fromBlock: 0,
@@ -76,6 +79,8 @@ const testCall = async (req, res) => {
 
 app.use("/test", exceptionHandler(testCall));
 
+
+// prepare connection to a node for a user
 const prepareNode = async (req, res, next) => {
   const { nodeAddress, companyAddress, password } = req.user;
   web3 = new Web3(new Web3.providers.HttpProvider(nodeAddress));
@@ -100,6 +105,8 @@ const prepareNode = async (req, res, next) => {
   next();
 };
 
+
+// append a new user to the blockchain
 const createUser = async (req, res) => {
   let { userToCreateAddress, name, role } = req.body;
   const { companyAddress: senderAddress } = req.user;
@@ -130,6 +137,7 @@ const createUser = async (req, res) => {
     .json({ success: "Successfully added new " + (role ? role : "User") });
 };
 
+// check if an account exists on the blockchain
 const findAccountExists = async (val) => {
   let users = val.startsWith("0x")
     ? await contractInstance.getPastEvents("UserEvent", {
@@ -150,6 +158,8 @@ const findAccountExists = async (val) => {
     : users.find((el) => el.returnValues.companyName === val);
 };
 
+
+// create a contract for a product
 const createProductContract = async (req, res) => {
   let {
     sellerAddress,
@@ -201,6 +211,8 @@ const createProductContract = async (req, res) => {
   });
 };
 
+
+// get all the products for a manufacturer
 const getAllProducts = async (req, res) => {
   const { companyAddress, role } = req.user;
   if (!accounts.includes(companyAddress.toLowerCase()))
@@ -220,6 +232,8 @@ const getAllProducts = async (req, res) => {
     .json({ products: products.map((el) => ({ ...el.returnValues })) });
 };
 
+// get the user currently holding the item, only blockchain entities
+// not available for customers who bought an item
 const getProductCurrentOwner = async (req, res) => {
   let { product: productAddress } = req.query;
   productAddress = decrypt(productAddress);
@@ -249,6 +263,7 @@ const getProductCurrentOwner = async (req, res) => {
   res.status(200).json({ owner: companyName });
 };
 
+// the final destination of the entity where the product should be sold
 const getProductSeller = async (req, res) => {
   let { product: productAddress } = req.query;
   productAddress = decrypt(productAddress);
@@ -278,6 +293,7 @@ const getProductSeller = async (req, res) => {
   res.status(200).json({ seller: companyName });
 };
 
+// get a product by its id, not available to consumers
 const getProductById = async (req, res) => {
   let { productId } = req.body;
 
@@ -301,6 +317,8 @@ const getProductById = async (req, res) => {
     transits: transits.map((el) => el.returnValues),
   });
 };
+
+// get the provenance details of a product
 const getProductDetails = async (req, res) => {
   let { product: productAddress } = req.query;
   if (
@@ -334,6 +352,7 @@ const getProductDetails = async (req, res) => {
   });
 };
 
+// get the branches for a user
 const getCompanyBranches = async (req, res) => {
   const { companyAddress } = req.body;
   const branches = await contractInstance.getPastEvents("BranchEvent", {
@@ -344,6 +363,8 @@ const getCompanyBranches = async (req, res) => {
   return res.status(200).json({ branches });
 };
 
+
+// authentication for blockchain entities
 const login = async (req, res) => {
   let { username, password, nodeAddress } = req.body;
 
@@ -395,6 +416,8 @@ const login = async (req, res) => {
   });
 };
 
+
+// customers can return products if request is made within the seller's premises
 const returnProduct = async (req, res) => {
   let { productNFC, productQR, buyer, latitude, longitude } = req.body;
   const { companyAddress: sellerAddress, role } = req.user;
@@ -420,6 +443,7 @@ const returnProduct = async (req, res) => {
   res.status(200).json({ message: "Product returned" });
 };
 
+// reselling a product can be done from consumer to consumer only if transaction takes place in the seller's premises
 const resellProduct = async (req, res) => {
   let {
     productNFC,
@@ -454,6 +478,8 @@ const resellProduct = async (req, res) => {
   res.status(200).json({ message: "Successfully transferred property" });
 };
 
+
+// a product is sold by a seller to a costumer
 const sellProduct = async (req, res) => {
   let { productNFC, productQR, buyer, latitude, longitude } = req.body;
   const { companyAddress: sellerAddress, role } = req.user;
@@ -478,6 +504,8 @@ const sellProduct = async (req, res) => {
   res.status(200).json({ message: "Congrats! You just acquired this item." });
 };
 
+
+// a product is transferred from one entity to another until it reaches the seller
 const transferProduct = async (req, res) => {
   let { destinationAddress, productAddress, latitude, longitude } = req.body;
   if (
