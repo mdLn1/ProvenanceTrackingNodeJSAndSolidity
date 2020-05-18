@@ -7,8 +7,8 @@ module.exports = function (deployer, network, accounts) {
     dateAdded.toLocaleDateString() + " at " + dateAdded.toLocaleTimeString();
   deployer.deploy(
     TrackerContract,
-    "ContractCreator",
-    "distributor",
+    "Adidas",
+    "manufacturer",
     stringDate,
     {
       from: accounts[0],

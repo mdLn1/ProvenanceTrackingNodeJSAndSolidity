@@ -88,11 +88,16 @@ const prepareNode = async (req, res, next) => {
   accounts = await promisify(web3.eth.getAccounts);
   accounts = accounts.map((el) => el.toLowerCase());
   if (process.env.NODE_ENV === "production") {
-    const res = await web3.eth.personal.unlockAccount(
-      companyAddress,
-      password,
-      100000
-    );
+    try {
+      const res = await web3.eth.personal.unlockAccount(
+        companyAddress,
+        password,
+        100000
+      );
+    } catch (err) {
+      throw new CustomError("Invalid account or password", 400);
+    }
+
     web3.eth.defaultAccount = companyAddress;
   } else {
     web3.eth.defaultAccount = accounts[0];
@@ -106,7 +111,6 @@ const createUser = async (req, res) => {
   if (!accounts.includes(senderAddress.toLowerCase()))
     throw new CustomError("Invalid account address", 400);
   role = role.toLowerCase();
-  password = await saltHash(password);
   if (!roles.includes(role))
     throw new CustomError("Chosen role does not exist", 400);
   let users = await contractInstance.getPastEvents("UserEvent", {
@@ -123,6 +127,7 @@ const createUser = async (req, res) => {
   await contractInstance.methods
     .addUser(userToCreateAddress, name, role, stringDate)
     .send({
+      from: senderAddress,
       gas: 3000000,
     });
   res
@@ -354,18 +359,32 @@ const login = async (req, res) => {
 
   if (process.env.NODE_ENV === "test")
     web3.eth.Contract.defaultAccount =
-      "0xbEEBc172694c0f55eC41Efb36f1a85aEcE3C46E2";
+      "0x4EefD7B2cb54b11cf580f1F1700721C1219feF60";
 
-  let resp, unlockSuccess;
-  // if (process.env.NODE_ENV === "production") {
-  //   unlockSuccess = await web3.eth.personal.unlockAccount(
-  //     mainAccount, // account to unlock on main node
-  //     password,
-  //     15000
-  //   );
-  // }
-  // if (!unlockSuccess) throw new CustomError("Action failed, please try again");
-  resp = await findAccountExists(username);
+  let resp = await findAccountExists(username);
+  if (process.env.NODE_ENV === "production") {
+    web3 = new Web3(new Web3.providers.HttpProvider(nodeAddress));
+    contractInstance = new web3.eth.Contract(
+      abi,
+      process.env.NODE_ENV === "production"
+        ? production.contractAddress
+        : test.contractAddress
+    );
+    accounts = await promisify(web3.eth.getAccounts);
+    accounts = accounts.map((el) => el.toLowerCase());
+    if(!accounts.includes(resp.returnValues.userAddress.toLowerCase())) {
+      throw new CustomError("Invalid account or password");
+    }
+    try {
+      await web3.eth.personal.unlockAccount(
+        resp.returnValues.userAddress, // account to unlock on main node
+        password,
+        15000
+      );
+    } catch (error) {
+      throw new CustomError("Invalid account or password");
+    }
+  }
   if (resp === undefined) throw new CustomError("Invalid account or password");
   const user = {
     companyAddress: resp.returnValues.userAddress,
@@ -385,7 +404,7 @@ const login = async (req, res) => {
   };
 
   let token = jwt.sign(payload, config.get("jwtSecret"), {
-    expiresIn: 60000,
+    expiresIn: "5h",
   });
   token = encrypt(token);
   delete user.password;
@@ -539,9 +558,13 @@ const transferProduct = async (req, res) => {
 
 // GET
 app.get("/product-details", exceptionHandler(getProductDetails));
-app.get("/all-products", [authMiddleware], exceptionHandler(getAllProducts));
 app.get(
-  "/product-owner",
+  "/all-products",
+  [authMiddleware, middlewareExceptionHandler(prepareNode)],
+  exceptionHandler(getAllProducts)
+);
+app.get(
+  "/product-holder",
   [authMiddleware, middlewareExceptionHandler(prepareNode)],
   exceptionHandler(getProductCurrentOwner)
 );
@@ -654,7 +677,7 @@ app.use((err, req, res, next) => {
     err.message = err.message.split("revert ")[1];
     err.statusCode = 400;
   }
-  if (err.message.includes("invalid string value ")) {
+  if (err.message && err.message.includes("invalid string value ")) {
     let str = err.message.split("_")[1];
     str = str.substring(0, str.indexOf('"'));
     err.message = str + "invalid value";
