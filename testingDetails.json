@@ -1,24 +1,25 @@
 {
     "test": {
         "contractAddress": "0xc2D24b35e444A0fdF729AF364eFf1681ce027e53",
-        "productAddress": "",
-        "productId": 1,
+        "productQR": "f1e3e1b7b3c530453d9fed74540e12e7:024021ab621d8bf490f1f469e151717dedcd0134e3ef8048950c14b35ea8742041ee2d2e864171d26a625002f12fd85c",
+        "productNFC": "ab6e0384d100b9fce0cb0178967e7d92:8ca91abf8921c0addf680200afd00cbc",
         "nodeAddresses": [
             "http://127.0.0.1:10545"
         ]
     },
     "production": {
         "contractAddress": "0xD6d5C8AdC7AEBac95e0a27D3acD5eD5EcffD1443",
-        "productAddress": "",
-        "productId": 1,
+        "productQR": "9873c05424f181d9d7df3d323fd032fe:5cd3e43631558912ad2efd51acb28a0110b35a56e0f13402d82855e914335cc9500a1b44bbf73cd462bb210c11f75f43",
+        "productNFC": "7482f1152ce2415635b7cec35ffb11db:15de6e41b1257c7236c00b059cc7a1cd",
         "nodeAddresses": [
-            "http://51.11.128.110:8001",
-            "http://51.11.128.110:8002",
-            "http://51.11.128.110:8003",
-            "http://51.11.128.110:8004",
-            "http://51.11.128.110:8005",
-            "http://51.11.128.110:8006",
-            "http://51.11.128.110:8007"
+            "http://51.132.38.7:8001",
+            "http://51.132.38.7:8002",
+            "http://51.132.38.7:8003",
+            "http://51.132.38.7:8004",
+            "http://51.132.38.7:8005",
+            "http://51.132.38.7:8006",
+            "http://51.132.38.7:8007",
+            "http://51.132.38.7:8008"
         ]
     }
 }

@@ -5,26 +5,25 @@ ubuntu server accounts = {
 
     first: "0xd602429da1622fc6af2a7f529c86009202cd2033",
     accounts node 1 {
-        "0xACdACF1B0E8F27a5A1167Bead1f7539cf7B23ae4",
-        "Amazon": "0xE1a7a7c35f4f75b3E5c75BbbecB1e7deF6dccBA5"
+        Adidas : "0xACdACF1B0E8F27a5A1167Bead1f7539cf7B23ae4",
     }
     accounts node 2 {
-        "Nike": "0xde9C6498Cb767Cf28bA549A5f2BF324d8E8dEC2B",
+        "Amazon": "0xde9C6498Cb767Cf28bA549A5f2BF324d8E8dEC2B",
         "0xcBF40d3AB0F5590a97623c6b9d65FBF580c2E675"
     }
 
     accounts node 3 {
-       Adidas: "0xf91e75aDf8c792C4A4b458EC116B8D6cD88b2a3a"
+       Tesco: "0xf91e75aDf8c792C4A4b458EC116B8D6cD88b2a3a"
     }
     node 4 {
-       Tesco: 0x498d9c26a7554E74Dd85128Eb8F1e82230c190bC
+       DPD: 0x498d9c26a7554E74Dd85128Eb8F1e82230c190bC
     }
     node 5 {
-        Sainsbury's: 0xfed271F1b5933FC3fe4f52Ba05F7289199F9d1c3
+        : 0xfed271F1b5933FC3fe4f52Ba05F7289199F9d1c3
     }
 
     node 6 {
-        DPD: 0x5c4b8B83c383a0786ae5931ff0A76C1c9f27e212
+        Sainsbury's: 0x5c4b8B83c383a0786ae5931ff0A76C1c9f27e212
 
     }
     7 {
@@ -68,10 +67,7 @@ ethash PoW = {
 
 
 
-clique.propose("0x7F6aACC5c1f566AE0ECB3aD5869E4dA3d44f2d33", true)
-geth --identity "node01" --rpc --rpcport "8501" --rpccorsdomain "*" --datadir node1/ --port 30311 --rpc --rpcaddr 'localhost' --rpcapi 'personal,db,eth,net,web3,txpool,miner' --bootnodes 'enode://cbe806e594ed684497cf85570850bb41f9dffbd1600f1e29b5450b4ff0efb9e152ab9fb4781c9bbf2f84f29fb15ffdd6ae756a4a910594254bd1e006fb547468@127.0.0.1:0?discport=30310' --networkid 15151 --gasprice '1' -unlock '0x1845A3F5f1795682aA2fcA1b3085115DE1bAdc37' --password node1/password.txt --mine --allow-insecure-unlock --ipcdisable
-geth  --identity "node02" --datadir node2/ --syncmode 'full' --port 30312 --rpc --rpcaddr 'localhost' --rpcport 8502 --rpcapi 'personal,db,eth,net,web3,txpool,miner' --bootnodes 'enode://cbe806e594ed684497cf85570850bb41f9dffbd1600f1e29b5450b4ff0efb9e152ab9fb4781c9bbf2f84f29fb15ffdd6ae756a4a910594254bd1e006fb547468@127.0.0.1:0?discport=30310' --networkid 15151 --gasprice '1' -unlock 'BE45B6387BCdb9AA558E105826Dba55fFA2d1aA0' --password node2/password.txt --mine --allow-insecure-unlock --ipcdisable
-
+clique.propose("0x43376ADFd96D1AA7A7dD95533b8182FBeb93e1B0", true)
 geth --datadir node-name/ account new
 echo 'account' >> accounts.txt
 echo 'password' >> password.txt
@@ -108,36 +104,13 @@ web3.miner.setEtherbase(web3.eth.accounts[0])
 personal.newAccount("password")
 personal.listAccounts
 
-Genesis File
-{
-    "config": {
-        "chainId": 15,
-        "homesteadBlock": 0,
-	“eip150Block”:0,
-        "eip155Block": 0,
-        "eip158Block": 0
-    },
-    "difficulty": "400000",
-    "gasLimit": "2100000",
-    "alloc": {
-        "0x06E3940933674BcD4F17bEA517dcf8c8587ce6A0": { "balance": “5000000000000000000" },
-        "0x87E85a4C19ee1048a5381e88276C632ac8B1C139": { "balance": “5000000000000000000" },
-    }
-}
-
-
-
 $ geth --datadir "/PATH_TO_NODE01/" account new
 $ geth --datadir "/PATH_TO_NODE/" init /PATH_TO/genesis.json
 $ geth --identity "node101 --rpc --rpcport "8000" --rpccorsdomain "*" --datadir "/PATH_TO_NODE/" --port "30303" --nodiscover --rpcapi "db,eth,net,web3,personal,miner,admin" --networkid 1900 --nat "any"
 
-WS_SECRET=Gabriel1 npm start
 
-
-Geth attach http://ip:port
-
-admin.addPeer("enode://e9a064001f2498eceda1b5b6097f994f0a11a5e946949c8914e424dc2ae93ba602b9abd2313654fc6f478acaaefe33bb1e3fe670444fcfafcd49cc63b9b8dcd0@127.0.0.1:30303?discport=0")
+Geth attacch http://ip:port
 
 Create boot node:
 bootnode -genkey bootnode.key
-    bootnode -nodekey bootnode.key -verbosity 9 -addr :30410
+bootnode -nodekey bootnode.key -verbosity 9 -addr :30410
